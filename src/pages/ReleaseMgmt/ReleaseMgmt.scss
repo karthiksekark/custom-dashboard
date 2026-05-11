@@ -35,6 +35,10 @@
     font-weight: 600;
     border-radius: 6px;
     padding: 5px 14px;
+    // --hc CSS custom property set by parent via style prop
+    color:      var(--hc, #{$color-success});
+    background: color-mix(in srgb, var(--hc, #{$color-success}) 6%, transparent);
+    border:     1px solid color-mix(in srgb, var(--hc, #{$color-success}) 20%, transparent);
   }
 
   // ── Analytics charts grid ──────────────────────────────────────────────────

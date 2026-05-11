@@ -11,31 +11,40 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
-  min-width: 540px;  // force scroll on small screens
+  min-width: 540px;
 
-  // Header row
   &__head-row {
     background: $color-sky-50;
-
-    &--alert {
-      background: $color-sky-50;
-    }
+    &--alert { background: $color-sky-50; }
   }
 
   &__th {
     @include th-base;
     text-align: center;
     border-bottom: 1px solid $color-sky-100;
-
     &--left  { text-align: left; }
     &--alert { border-bottom-color: #fecdd3; }
   }
 
-  // Body rows
+  // ── Body rows ───────────────────────────────────────────────────────────────
   &__row {
-    &--alt { background: $color-bg-light; }
+    &--alt {
+      background: $color-bg-light;
+    }
+
+    // Today highlight — stronger than alt stripe
+    &--today {
+      background: color-mix(in srgb, $color-primary 7%, transparent) !important;
+      border-left: 3px solid $color-primary;
+
+      td { background: transparent !important; }
+    }
 
     &.wr:hover td { background: $color-sky-50 !important; }
+    &--today.wr:hover td {
+      background: color-mix(in srgb, $color-primary 12%, transparent) !important;
+    }
+
     td { transition: background 0.1s; }
   }
 
@@ -46,35 +55,62 @@
     &--center  { text-align: center; }
     &--name    { color: $color-text-dark; }
     &--date    { color: $color-primary; font-weight: 600; white-space: nowrap; }
-    &--num     { text-align: center; }
-    &--underline {
-      text-decoration: underline;
-      text-decoration-color: $color-sky-200;
-      text-underline-offset: 2px;
-    }
+    &--num     { text-align: center; color: $color-text-dark; }
     &--health  { text-align: center; }
     &--status  {
       font-weight: 600;
       display: flex;
       align-items: center;
       gap: 6px;
+      white-space: nowrap;
     }
   }
 
-  // Footer row
+  // ── Footer / total rows ─────────────────────────────────────────────────────
   &__foot-row {
     background: $color-sky-100;
     border-top: 2px solid $color-sky-300;
+
+    &--consolidated {
+      background: #e0f2fe;
+      border-top: 2px solid #7dd3fc;
+
+      .data-table__tfoot-cell--label {
+        font-size: 12px;
+        letter-spacing: 0.04em;
+      }
+    }
+
+    &--alert {
+      background: #fff1f2;
+      border-top: 2px solid #fecdd3;
+    }
   }
 
   &__tfoot-cell {
     padding: 12px 14px;
 
-    &--label { color: $color-primary; font-weight: 700; }
-    &--val   { text-align: center; color: $color-text-darkest; font-weight: 700; }
+    &--label  { color: $color-primary; font-weight: 700; }
+    &--val    { text-align: center; color: $color-text-darkest; font-weight: 700; }
     &--center { text-align: center; }
-    &--hs    { text-align: center; color: $color-success; font-weight: 700; }
+    &--hs     { text-align: center; color: $color-success; font-weight: 700; }
   }
+}
+
+// ── Today badge ────────────────────────────────────────────────────────────────
+.today-badge {
+  display: inline-block;
+  background: $color-primary;
+  color: $color-white;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-right: 5px;
+  vertical-align: middle;
+  line-height: 1.4;
 }
 
 // ── Health bar ────────────────────────────────────────────────────────────────
@@ -96,12 +132,14 @@
   &__fill {
     height: 100%;
     border-radius: 2px;
+    background: var(--hc, #{$color-text-muted});
   }
 
   &__val {
     font-weight: 700;
     font-size: 12px;
     min-width: 36px;
+    color: var(--hc, #{$color-text-muted});
   }
 }
 
@@ -112,6 +150,7 @@
   border-radius: 50%;
   display: inline-block;
   flex-shrink: 0;
+  background: var(--dot, #{$color-text-muted});
 }
 
 // ── Mobile card list (hidden on desktop) ──────────────────────────────────────
@@ -127,7 +166,9 @@
     border-radius: 8px;
     overflow: hidden;
 
-    &--alert { border-color: #fecdd3; }
+    &--alert        { border-color: #fecdd3; }
+    &--consolidated { background: $color-sky-50; border-color: $color-sky-200; }
+    &--today        { border-color: $color-primary; border-width: 2px; }
   }
 
   &__title {
@@ -141,7 +182,8 @@
     gap: 6px;
     border-bottom: 1px solid $color-sky-100;
 
-    &--date { color: $color-primary; }
+    &--date         { color: $color-primary; }
+    &--consolidated { color: $color-primary; font-style: italic; }
   }
 
   &__row {
@@ -153,10 +195,7 @@
     font-size: 12px;
 
     &:last-child { border-bottom: none; }
-
-    &--total {
-      background: $color-sky-50;
-    }
+    &--total     { background: $color-sky-50; }
   }
 
   &__key {
@@ -169,6 +208,12 @@
   &__plain {
     font-weight: 600;
     font-size: 13px;
+  }
+
+  &__health-val {
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--hc, #{$color-text-muted});
   }
 }
 

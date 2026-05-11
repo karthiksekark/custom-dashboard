@@ -7,11 +7,30 @@
   border-radius: $border-radius-card;
   overflow: hidden;
   box-shadow: 0 2px 12px color-mix(in srgb, var(--acc) 8%, transparent);
+  transition: box-shadow 0.2s, transform 0.2s;
 
   &--empty {
     opacity: 0.5;
     border-color: $color-sky-100;
     box-shadow: none;
+  }
+
+  // Active quarter (contains the selected month)
+  &--active {
+    border-width: 2px;
+    border-color: var(--acc);
+    box-shadow: 0 4px 20px color-mix(in srgb, var(--acc) 22%, transparent);
+
+    .quarter-card__header {
+      background: linear-gradient(90deg, color-mix(in srgb, var(--acc) 14%, transparent), transparent);
+    }
+
+    .quarter-card__title::after {
+      content: ' ◀';
+      font-size: 10px;
+      opacity: 0.6;
+      vertical-align: middle;
+    }
   }
 
   &__header {
@@ -61,13 +80,8 @@
     padding: 9px 14px;
     border-bottom: 1px solid $color-sky-50;
 
-    &--alt {
-      background: $color-bg-light;
-    }
-
-    &:last-child {
-      border-bottom: none;
-    }
+    &--alt { background: $color-bg-light; }
+    &:last-child { border-bottom: none; }
   }
 
   &__label {
