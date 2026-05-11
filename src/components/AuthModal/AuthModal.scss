@@ -1,0 +1,26 @@
+@use "../../styles/variables" as *;
+
+.auth-modal {
+  &__note {
+    font-size: 11px;
+    color: $color-text-muted;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  &__no-config {
+    background: $color-sky-50;
+    border: 1px solid $color-sky-200;
+    border-radius: 8px;
+    padding: 14px;
+  }
+
+  &__code {
+    background: $color-sky-100;
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 11px;
+    font-family: monospace;
+    color: $color-primary;
+  }
+}
