@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "JIRA Dashboard Insights",
+  "version": "1.0.0",
+  "description": "Release Intelligence Dashboard — Arctic White",
+  "permissions": ["tabs"],
+  "host_permissions": [
+    "https://*.atlassian.net/*",
+    "https://*.jira.com/*"
+  ],
+  "action": {
+    "default_title": "Open JIRA Dashboard"
+  },
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
+  "icons": {
+    "16": "public/icons/icon16.png",
+    "48": "public/icons/icon48.png",
+    "128": "public/icons/icon128.png"
+  }
+}

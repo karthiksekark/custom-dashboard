@@ -1,0 +1,60 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+.release-mgmt {
+  max-width: $max-width;
+  margin: 0 auto;
+  padding: 20px $gutter;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  @include respond-to(tablet) { padding: 16px $gutter-sm; }
+  @include respond-to(mobile) { padding: 12px 10px; gap: 10px; }
+
+  // ── Top grid: Health | Implementation ──────────────────────────────────────
+  &__top-grid {
+    display: grid;
+    grid-template-columns: minmax(220px, 260px) 1fr;
+    gap: 14px;
+
+    @include respond-to(tablet) { grid-template-columns: 1fr; }
+  }
+
+  // ── Health card body ───────────────────────────────────────────────────────
+  &__health-body {
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__health-badge {
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    padding: 5px 14px;
+  }
+
+  // ── Analytics charts grid ──────────────────────────────────────────────────
+  &__charts {
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+
+    @include respond-to(mobile) { grid-template-columns: 1fr; }
+  }
+
+  // ── Quarterly grid ─────────────────────────────────────────────────────────
+  &__quarters {
+    padding: 16px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+
+    @include respond-to(tablet) { grid-template-columns: repeat(2, 1fr); }
+    @include respond-to(mobile) { grid-template-columns: 1fr; }
+  }
+}

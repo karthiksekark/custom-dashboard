@@ -1,0 +1,46 @@
+// ── Palette ──────────────────────────────────────────────────────────────────
+$color-primary:        #0284c7;
+$color-primary-dark:   #0369a1;
+$color-primary-light:  #0ea5e9;
+$color-sky-50:         #f0f9ff;
+$color-sky-100:        #e0f2fe;
+$color-sky-200:        #bae6fd;
+$color-sky-300:        #7dd3fc;
+
+$color-text-darkest:   #0c4a6e;
+$color-text-dark:      #334155;
+$color-text-muted:     #94a3b8;
+$color-text-faint:     #cbd5e1;
+$color-white:          #ffffff;
+$color-bg-light:       #f8fbff;
+
+// ── Severity ─────────────────────────────────────────────────────────────────
+$color-critical:       #dc2626;
+$color-high:           #ea580c;
+$color-medium:         #ca8a04;
+$color-low:            #0284c7;
+$color-success:        #16a34a;
+$color-success-light:  #65a30d;
+
+// ── Border ───────────────────────────────────────────────────────────────────
+$border-card:          1px solid $color-sky-100;
+$border-radius-card:   12px;
+$border-radius-chip:   4px;
+$border-radius-btn:    7px;
+
+// ── Shadow ───────────────────────────────────────────────────────────────────
+$shadow-card:          0 1px 8px rgba(2, 132, 199, 0.06);
+$shadow-header:        0 1px 6px rgba(2, 132, 199, 0.08);
+$shadow-logo:          0 4px 12px rgba(2, 132, 199, 0.3);
+
+// ── Layout ───────────────────────────────────────────────────────────────────
+$max-width:            1280px;
+$gutter:               32px;
+$gutter-sm:            16px;
+
+// ── Breakpoints ───────────────────────────────────────────────────────────────
+$bp-tablet:            768px;
+$bp-mobile:            480px;
+
+// ── Typography ───────────────────────────────────────────────────────────────
+$font-stack:           system-ui, -apple-system, sans-serif;

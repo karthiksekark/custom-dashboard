@@ -1,0 +1,16 @@
+@use "../../styles/variables" as *;
+
+.chip {
+  display: inline-block;
+  border-radius: $border-radius-chip;
+  padding: 2px 9px;
+  font-weight: 600;
+  font-size: 12px;
+
+  &--empty {
+    background: none;
+    border: none;
+    color: $color-text-faint;
+    padding: 0;
+  }
+}
