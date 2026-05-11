@@ -1,0 +1,13 @@
+@use "../../styles/variables" as *;
+
+.card {
+  background: $color-white;
+  border: $border-card;
+  border-radius: $border-radius-card;
+  overflow: hidden;
+  box-shadow: $shadow-card;
+
+  &--alert {
+    border-color: #fecdd3;
+  }
+}

@@ -1,0 +1,26 @@
+@use "../../styles/variables" as *;
+
+.chart-panel {
+  background: $color-bg-light;
+  border: $border-card;
+  border-radius: 10px;
+  padding: 14px;
+
+  &__title {
+    font-weight: 600;
+    font-size: 13px;
+    color: $color-text-darkest;
+    margin-bottom: 10px;
+  }
+
+  &__canvas {
+    height: 200px;
+    position: relative;
+  }
+}
+
+.gauge {
+  width: 128px;
+  height: 128px;
+  flex-shrink: 0;
+}

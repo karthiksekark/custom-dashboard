@@ -1,0 +1,79 @@
+@use "variables" as *;
+
+@mixin respond-to($bp) {
+  @if $bp == tablet {
+    @media (max-width: #{$bp-tablet}) { @content; }
+  } @else if $bp == mobile {
+    @media (max-width: #{$bp-mobile}) { @content; }
+  }
+}
+
+@mixin card {
+  background: $color-white;
+  border: $border-card;
+  border-radius: $border-radius-card;
+  overflow: hidden;
+  box-shadow: $shadow-card;
+}
+
+@mixin section-header($eye-color: $color-primary, $title-color: $color-text-darkest) {
+  padding: 14px 20px 11px;
+  border-bottom: 1px solid $color-sky-50;
+  background: $color-bg-light;
+
+  &__eye {
+    font-size: 10px;
+    color: $eye-color;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+
+  &__title {
+    font-size: 14px;
+    font-weight: 600;
+    color: $title-color;
+  }
+}
+
+@mixin chip($bg-alpha: 14) {
+  display: inline-block;
+  border-radius: $border-radius-chip;
+  padding: 2px 9px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+@mixin th-base {
+  padding: 10px 14px;
+  color: $color-text-muted;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+@mixin td-base {
+  padding: 10px 14px;
+  border-bottom: 1px solid $color-sky-50;
+  transition: background 0.1s;
+}
+
+@mixin scrollable-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

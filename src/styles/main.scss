@@ -1,0 +1,11 @@
+@use "variables" as *;
+@use "mixins" as *;
+@use "reset";
+
+.app {
+  min-height: 100vh;
+  background: linear-gradient(180deg, $color-sky-50 0%, $color-white 30%, $color-bg-light 100%);
+  font-family: $font-stack;
+  color: $color-text-darkest;
+  padding-bottom: 60px;
+}

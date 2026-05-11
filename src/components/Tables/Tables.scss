@@ -1,0 +1,179 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+// ── Scrollable wrapper ────────────────────────────────────────────────────────
+.table-scroll {
+  @include scrollable-x;
+}
+
+// ── Base table ────────────────────────────────────────────────────────────────
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 540px;  // force scroll on small screens
+
+  // Header row
+  &__head-row {
+    background: $color-sky-50;
+
+    &--alert {
+      background: $color-sky-50;
+    }
+  }
+
+  &__th {
+    @include th-base;
+    text-align: center;
+    border-bottom: 1px solid $color-sky-100;
+
+    &--left  { text-align: left; }
+    &--alert { border-bottom-color: #fecdd3; }
+  }
+
+  // Body rows
+  &__row {
+    &--alt { background: $color-bg-light; }
+
+    &.wr:hover td { background: $color-sky-50 !important; }
+    td { transition: background 0.1s; }
+  }
+
+  &__td {
+    @include td-base;
+    color: $color-text-dark;
+
+    &--center  { text-align: center; }
+    &--name    { color: $color-text-dark; }
+    &--date    { color: $color-primary; font-weight: 600; white-space: nowrap; }
+    &--num     { text-align: center; }
+    &--underline {
+      text-decoration: underline;
+      text-decoration-color: $color-sky-200;
+      text-underline-offset: 2px;
+    }
+    &--health  { text-align: center; }
+    &--status  {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  }
+
+  // Footer row
+  &__foot-row {
+    background: $color-sky-100;
+    border-top: 2px solid $color-sky-300;
+  }
+
+  &__tfoot-cell {
+    padding: 12px 14px;
+
+    &--label { color: $color-primary; font-weight: 700; }
+    &--val   { text-align: center; color: $color-text-darkest; font-weight: 700; }
+    &--center { text-align: center; }
+    &--hs    { text-align: center; color: $color-success; font-weight: 700; }
+  }
+}
+
+// ── Health bar ────────────────────────────────────────────────────────────────
+.health-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  &__track {
+    width: 48px;
+    height: 4px;
+    border-radius: 2px;
+    background: $color-sky-100;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  &__fill {
+    height: 100%;
+    border-radius: 2px;
+  }
+
+  &__val {
+    font-weight: 700;
+    font-size: 12px;
+    min-width: 36px;
+  }
+}
+
+// ── Status dot ────────────────────────────────────────────────────────────────
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+// ── Mobile card list (hidden on desktop) ──────────────────────────────────────
+.card-list {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+
+  &__item {
+    background: $color-white;
+    border: $border-card;
+    border-radius: 8px;
+    overflow: hidden;
+
+    &--alert { border-color: #fecdd3; }
+  }
+
+  &__title {
+    background: $color-sky-50;
+    padding: 10px 14px;
+    font-weight: 600;
+    font-size: 13px;
+    color: $color-text-dark;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 1px solid $color-sky-100;
+
+    &--date { color: $color-primary; }
+  }
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    border-bottom: 1px solid $color-sky-50;
+    font-size: 12px;
+
+    &:last-child { border-bottom: none; }
+
+    &--total {
+      background: $color-sky-50;
+    }
+  }
+
+  &__key {
+    color: $color-text-muted;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  &__plain {
+    font-weight: 600;
+    font-size: 13px;
+  }
+}
+
+// ── Responsive: hide table, show cards ───────────────────────────────────────
+@include respond-to(mobile) {
+  .data-table { display: none; }
+  .card-list  { display: flex; }
+}

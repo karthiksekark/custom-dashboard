@@ -1,0 +1,32 @@
+@use "../../styles/variables" as *;
+
+.tabs {
+  border-bottom: 1px solid $color-sky-200;
+  padding: 0 $gutter;
+  display: flex;
+  background: $color-white;
+
+  &__item {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: $color-text-muted;
+    padding: 12px 18px;
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    margin-bottom: -1px;
+    font-family: $font-stack;
+    transition: color 0.15s, border-color 0.15s;
+
+    &:hover {
+      color: $color-primary;
+    }
+
+    &--active {
+      border-bottom-color: $color-primary;
+      color: $color-primary;
+      font-weight: 600;
+    }
+  }
+}

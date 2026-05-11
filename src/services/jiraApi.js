@@ -1,0 +1,130 @@
+import moment from 'moment-timezone';
+
+// ── Config ────────────────────────────────────────────────────────────────────
+// Set VITE_JIRA_BASE_URL in a .env file, e.g.:
+//   VITE_JIRA_BASE_URL=https://yourcompany.atlassian.net
+const JIRA_BASE = import.meta.env.VITE_JIRA_BASE_URL || '';
+const EST = 'America/New_York';
+const MAX_RESULTS = 1000;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+async function jiraFetch(path, options = {}) {
+  const res = await fetch(`${JIRA_BASE}${path}`, {
+    credentials: 'include',       // sends JSESSIONID cookie automatically
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    ...options,
+  });
+  if (!res.ok) throw new Error(`JIRA ${res.status}: ${path}`);
+  return res.json();
+}
+
+function jqlSearch(jql) {
+  return jiraFetch('/rest/api/2/search', {
+    method: 'POST',
+    body: JSON.stringify({ jql, maxResults: MAX_RESULTS, fields: ['priority', 'status', 'created', 'resolutiondate', 'assignee', 'labels'] }),
+  });
+}
+
+function rangeJql(year, month) {
+  const start = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).format('YYYY-MM-DD');
+  const end   = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).endOf('month').format('YYYY-MM-DD');
+  return { start, end };
+}
+
+// ── Public API ────────────────────────────────────────────────────────────────
+export async function fetchDefectsByPriority(year, month) {
+  const { start, end } = rangeJql(year, month);
+  const jql = `issuetype = Bug AND created >= "${start}" AND created <= "${end}" ORDER BY created DESC`;
+  const data = await jqlSearch(jql);
+
+  const counts = {};
+  data.issues.forEach(issue => {
+    const p = issue.fields.priority?.name || 'Unknown';
+    counts[p] = (counts[p] || 0) + 1;
+  });
+
+  const order = ['Critical', 'High', 'Medium', 'Low'];
+  return order.filter(k => counts[k]).map(name => ({ name, value: counts[name] }));
+}
+
+export async function fetchDefectsByStatus(year, month) {
+  const { start, end } = rangeJql(year, month);
+  const jql = `issuetype = Bug AND created >= "${start}" AND created <= "${end}" ORDER BY created DESC`;
+  const data = await jqlSearch(jql);
+
+  const counts = {};
+  data.issues.forEach(issue => {
+    const s = issue.fields.status?.name || 'Unknown';
+    counts[s] = (counts[s] || 0) + 1;
+  });
+
+  return Object.entries(counts).map(([name, value]) => ({ name, value }));
+}
+
+export async function fetchDailyMetrics(year, month) {
+  const { start, end } = rangeJql(year, month);
+  const jql = `project is not EMPTY AND created >= "${start}" AND created <= "${end}" ORDER BY created DESC`;
+  const data = await jqlSearch(jql);
+
+  // Group by calendar date (EST)
+  const byDate = {};
+  data.issues.forEach(issue => {
+    const dateKey = moment.tz(issue.fields.created, EST).format('M/D');
+    if (!byDate[dateKey]) byDate[dateKey] = { date: dateKey, t: 0, d: 0, c: 0, h: 0, m: 0, l: 0, closedT: 0 };
+    const row = byDate[dateKey];
+    row.t += 1;
+
+    const isBug = issue.fields.issuetype?.name === 'Bug';
+    if (isBug) {
+      row.d += 1;
+      const p = issue.fields.priority?.name;
+      if (p === 'Critical')    row.c += 1;
+      else if (p === 'High')   row.h += 1;
+      else if (p === 'Medium') row.m += 1;
+      else if (p === 'Low')    row.l += 1;
+    }
+    if (['Done', 'Closed', 'Resolved'].includes(issue.fields.status?.name)) row.closedT += 1;
+  });
+
+  return Object.values(byDate)
+    .map(row => ({
+      ...row,
+      c:  row.c  || null,
+      l:  row.l  || null,
+      hs: row.t > 0 ? parseFloat(((row.closedT / row.t) * 100).toFixed(2)) : null,
+    }))
+    .sort((a, b) => {
+      const [am, ad] = a.date.split('/').map(Number);
+      const [bm, bd] = b.date.split('/').map(Number);
+      return bm !== am ? bm - am : bd - ad;
+    });
+}
+
+export async function fetchHealthScore(year, month) {
+  const { start, end } = rangeJql(year, month);
+  const jql = `project is not EMPTY AND created >= "${start}" AND created <= "${end}"`;
+  const data = await jqlSearch(jql);
+  if (!data.issues.length) return null;
+  const closed = data.issues.filter(i => ['Done', 'Closed', 'Resolved'].includes(i.fields.status?.name)).length;
+  return Math.round((closed / data.issues.length) * 100);
+}
+
+export async function fetchImplTickets() {
+  const today = moment().tz(EST).format('YYYY-MM-DD');
+  const jql = `created = "${today}" ORDER BY assignee ASC`;
+  const data = await jqlSearch(jql);
+
+  const byTeam = {};
+  data.issues.forEach(issue => {
+    const team = issue.fields.assignee?.displayName || 'Unassigned';
+    if (!byTeam[team]) byTeam[team] = { team, UAT: 0, OPUAT: 0, CR_UAT: 0, BIZ_VAL: 0, Total: 0 };
+    const labels = issue.fields.labels || [];
+    if (labels.includes('UAT'))     byTeam[team].UAT     += 1;
+    if (labels.includes('OPUAT'))   byTeam[team].OPUAT   += 1;
+    if (labels.includes('CR_UAT'))  byTeam[team].CR_UAT  += 1;
+    if (labels.includes('BIZ_VAL')) byTeam[team].BIZ_VAL += 1;
+    byTeam[team].Total += 1;
+  });
+
+  return Object.values(byTeam);
+}
