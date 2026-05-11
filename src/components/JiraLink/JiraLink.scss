@@ -1,0 +1,29 @@
+@use "../../styles/variables" as *;
+
+.jira-link {
+  text-decoration: none;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 0.72;
+    cursor: pointer;
+  }
+
+  // For plain numeric cells (not chip-wrapped)
+  &--plain {
+    color: $color-primary;
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-color: $color-sky-200;
+    text-underline-offset: 2px;
+
+    &:hover {
+      text-decoration-color: $color-primary;
+      opacity: 1;
+    }
+  }
+}

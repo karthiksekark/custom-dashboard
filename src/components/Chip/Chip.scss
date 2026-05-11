@@ -6,6 +6,9 @@
   padding: 2px 9px;
   font-weight: 600;
   font-size: 12px;
+  background: color-mix(in srgb, var(--chip-color) 8%, transparent);
+  color: var(--chip-color);
+  border: 1px solid color-mix(in srgb, var(--chip-color) 25%, transparent);
 
   &--empty {
     background: none;

@@ -1,8 +1,10 @@
 import PropTypes from 'prop-types';
 import Chip from '../Chip/Chip';
+import JiraLink from '../JiraLink/JiraLink';
+import { implTeamFieldLink, implConsolidatedFieldLink } from '../../services/jiraLinks';
 import './Tables.scss';
 
-const COLS = ['Owner & Testing Teams', 'UAT', 'OPUAT', 'CR_UAT', 'BIZ_VAL', 'Total'];
+const COLS         = ['Owner & Testing Teams', 'UAT', 'OPUAT', 'CR_UAT', 'BIZ_VAL', 'Total'];
 const TICKET_FIELDS = ['UAT', 'OPUAT', 'CR_UAT', 'BIZ_VAL'];
 
 function chipColor(v) {
@@ -11,7 +13,16 @@ function chipColor(v) {
   return '#0284c7';
 }
 
-export default function ImplementationTable({ rows }) {
+function computeTotals(rows) {
+  return TICKET_FIELDS.reduce(
+    (acc, f) => { acc[f] = rows.reduce((s, r) => s + (r[f] || 0), 0); return acc; },
+    { Total: rows.reduce((s, r) => s + (r.Total || 0), 0) }
+  );
+}
+
+export default function ImplementationTable({ rows, todayIso }) {
+  const totals = computeTotals(rows);
+
   return (
     <div className="table-scroll">
       <table className="data-table">
@@ -28,18 +39,39 @@ export default function ImplementationTable({ rows }) {
               <td className="data-table__td data-table__td--name">{r.team}</td>
               {TICKET_FIELDS.map(f => (
                 <td key={f} className="data-table__td data-table__td--center">
-                  <Chip value={r[f]} color={chipColor(r[f])} />
+                  <JiraLink href={implTeamFieldLink(r.team, f, todayIso)}>
+                    <Chip value={r[f]} color={chipColor(r[f])} />
+                  </JiraLink>
                 </td>
               ))}
               <td className="data-table__td data-table__td--center">
-                <Chip value={r.Total} color="#0369a1" />
+                <JiraLink href={implTeamFieldLink(r.team, 'Total', todayIso)}>
+                  <Chip value={r.Total} color="#0369a1" />
+                </JiraLink>
               </td>
             </tr>
           ))}
         </tbody>
+        <tfoot>
+          <tr className="data-table__foot-row data-table__foot-row--consolidated">
+            <td className="data-table__tfoot-cell data-table__tfoot-cell--label">Consolidated Total</td>
+            {TICKET_FIELDS.map(f => (
+              <td key={f} className="data-table__tfoot-cell data-table__tfoot-cell--center">
+                <JiraLink href={implConsolidatedFieldLink(f, todayIso)}>
+                  <Chip value={totals[f]} color={chipColor(totals[f])} />
+                </JiraLink>
+              </td>
+            ))}
+            <td className="data-table__tfoot-cell data-table__tfoot-cell--center">
+              <JiraLink href={implConsolidatedFieldLink('Total', todayIso)}>
+                <Chip value={totals.Total} color="#0369a1" />
+              </JiraLink>
+            </td>
+          </tr>
+        </tfoot>
       </table>
 
-      {/* Mobile card layout */}
+      {/* ── Mobile card layout ── */}
       <div className="card-list">
         {rows.map((r, i) => (
           <div key={i} className="card-list__item">
@@ -47,20 +79,43 @@ export default function ImplementationTable({ rows }) {
             {TICKET_FIELDS.map(f => (
               <div key={f} className="card-list__row">
                 <span className="card-list__key">{f}</span>
-                <Chip value={r[f]} color={chipColor(r[f])} />
+                <JiraLink href={implTeamFieldLink(r.team, f, todayIso)}>
+                  <Chip value={r[f]} color={chipColor(r[f])} />
+                </JiraLink>
               </div>
             ))}
             <div className="card-list__row card-list__row--total">
               <span className="card-list__key">Total</span>
-              <Chip value={r.Total} color="#0369a1" />
+              <JiraLink href={implTeamFieldLink(r.team, 'Total', todayIso)}>
+                <Chip value={r.Total} color="#0369a1" />
+              </JiraLink>
             </div>
           </div>
         ))}
+        {/* Consolidated total card */}
+        <div className="card-list__item card-list__item--consolidated">
+          <div className="card-list__title card-list__title--consolidated">Consolidated Total</div>
+          {TICKET_FIELDS.map(f => (
+            <div key={f} className="card-list__row">
+              <span className="card-list__key">{f}</span>
+              <JiraLink href={implConsolidatedFieldLink(f, todayIso)}>
+                <Chip value={totals[f]} color={chipColor(totals[f])} />
+              </JiraLink>
+            </div>
+          ))}
+          <div className="card-list__row card-list__row--total">
+            <span className="card-list__key">Total</span>
+            <JiraLink href={implConsolidatedFieldLink('Total', todayIso)}>
+              <Chip value={totals.Total} color="#0369a1" />
+            </JiraLink>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
 ImplementationTable.propTypes = {
-  rows: PropTypes.arrayOf(PropTypes.object).isRequired,
+  rows:     PropTypes.arrayOf(PropTypes.object).isRequired,
+  todayIso: PropTypes.string,
 };

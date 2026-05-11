@@ -1,27 +1,37 @@
 import PropTypes from 'prop-types';
 import { healthColor } from '../../services/healthUtils';
+import JiraLink from '../JiraLink/JiraLink';
+import {
+  quarterTotalTicketsLink,
+  quarterTotalDefectsLink,
+  quarterPriorityLink,
+} from '../../services/jiraLinks';
 import './QuarterCard.scss';
 
-export default function QuarterCard({ quarter }) {
-  const { q, period, days, tickets, defects, c, h, m, l, hs, acc } = quarter;
+export default function QuarterCard({ quarter, isActive }) {
+  const { q, period, days, tickets, defects, c, h, m, l, hs, acc, startDate, endDate } = quarter;
   const empty = days === 0;
-  const hc = healthColor(hs);
+  const hc    = healthColor(hs);
 
   const rows = [
-    ['Release Days',  empty ? '—' : days],
-    ['Total Tickets', empty ? '—' : tickets],
-    ['Total Defects', empty ? '—' : defects],
-    ['Critical',      empty ? '—' : c],
-    ['High',          empty ? '—' : h],
-    ['Medium',        empty ? '—' : m],
-    ['Low',           empty ? '—' : l],
-    ['Avg. Health',   empty ? '—' : hs],
+    { label: 'Release Days',  val: empty ? '—' : days,    link: null,                                               color: null       },
+    { label: 'Total Tickets', val: empty ? '—' : tickets, link: quarterTotalTicketsLink(startDate, endDate),        color: '#334155'  },
+    { label: 'Total Defects', val: empty ? '—' : defects, link: quarterTotalDefectsLink(startDate, endDate),        color: '#334155'  },
+    { label: 'Critical',      val: empty ? '—' : c,       link: quarterPriorityLink(startDate, endDate, 'Critical'),color: '#dc2626'  },
+    { label: 'High',          val: empty ? '—' : h,       link: quarterPriorityLink(startDate, endDate, 'High'),    color: '#ea580c'  },
+    { label: 'Medium',        val: empty ? '—' : m,       link: quarterPriorityLink(startDate, endDate, 'Medium'),  color: '#ca8a04'  },
+    { label: 'Low',           val: empty ? '—' : l,       link: quarterPriorityLink(startDate, endDate, 'Low'),     color: '#0284c7'  },
+    { label: 'Avg. Health',   val: empty ? '—' : hs,      link: null,                                               color: hc         },
   ];
 
-  const rowColors = [null, '#334155', '#334155', '#dc2626', '#ea580c', '#ca8a04', '#0284c7', hc];
+  const modifiers = [
+    'quarter-card',
+    empty    ? 'quarter-card--empty'  : '',
+    isActive ? 'quarter-card--active' : '',
+  ].filter(Boolean).join(' ');
 
   return (
-    <div className={`quarter-card${empty ? ' quarter-card--empty' : ''}`} style={{ '--acc': acc, '--hc': hc }}>
+    <div className={modifiers} style={{ '--acc': acc, '--hc': hc }}>
       <div className="quarter-card__header">
         <div>
           <div className="quarter-card__title">{q}</div>
@@ -32,9 +42,10 @@ export default function QuarterCard({ quarter }) {
         </div>
       </div>
 
-      {rows.map(([label, val], i) => (
+      {rows.map(({ label, val, link, color }, i) => (
         <div key={label} className={`quarter-card__row${i % 2 ? '' : ' quarter-card__row--alt'}`}>
           <span className="quarter-card__label">{label}</span>
+
           {label === 'Avg. Health' && !empty ? (
             <div className="quarter-card__health">
               <div className="quarter-card__bar">
@@ -43,12 +54,14 @@ export default function QuarterCard({ quarter }) {
               <span className="quarter-card__health-val">{val}</span>
             </div>
           ) : (
-            <span
-              className="quarter-card__val"
-              style={empty ? {} : rowColors[i] ? { color: rowColors[i], fontWeight: 600 } : {}}
-            >
-              {val}
-            </span>
+            <JiraLink href={!empty ? link : null}>
+              <span
+                className="quarter-card__val"
+                style={!empty && color ? { color, fontWeight: 600 } : {}}
+              >
+                {val}
+              </span>
+            </JiraLink>
           )}
         </div>
       ))}
@@ -58,16 +71,19 @@ export default function QuarterCard({ quarter }) {
 
 QuarterCard.propTypes = {
   quarter: PropTypes.shape({
-    q:       PropTypes.string,
-    period:  PropTypes.string,
-    days:    PropTypes.number,
-    tickets: PropTypes.number,
-    defects: PropTypes.number,
-    c:       PropTypes.number,
-    h:       PropTypes.number,
-    m:       PropTypes.number,
-    l:       PropTypes.number,
-    hs:      PropTypes.number,
-    acc:     PropTypes.string,
+    q:         PropTypes.string,
+    period:    PropTypes.string,
+    days:      PropTypes.number,
+    tickets:   PropTypes.number,
+    defects:   PropTypes.number,
+    c:         PropTypes.number,
+    h:         PropTypes.number,
+    m:         PropTypes.number,
+    l:         PropTypes.number,
+    hs:        PropTypes.number,
+    acc:       PropTypes.string,
+    startDate: PropTypes.string,
+    endDate:   PropTypes.string,
   }).isRequired,
+  isActive: PropTypes.bool,
 };
