@@ -11,6 +11,7 @@ import {
   monthlyTotalDefectsLink,
   monthlyPriorityLink,
 } from '../../services/jiraLinks';
+import { useAppContext } from '../../hooks/useAppContext';
 import './Tables.scss';
 
 const EST  = 'America/New_York';
@@ -24,7 +25,9 @@ const PRIORITY_DEFS = [
 ];
 
 export default function DailyMetricsTable({ rows, totals, year, month }) {
-  const todayStr = moment().tz(EST).format('M/D');
+  const { state }  = useAppContext();
+  const components = state.preferences.components;
+  const todayStr   = moment().tz(EST).format('M/D');
 
   return (
     <div className="table-scroll">
@@ -53,18 +56,18 @@ export default function DailyMetricsTable({ rows, totals, year, month }) {
                   {r.date}
                 </td>
                 <td className="data-table__td data-table__td--num">
-                  <JiraLink href={dailyTotalTicketsLink(r.date, year)} plain>
+                  <JiraLink href={dailyTotalTicketsLink(r.date, year, components)} plain>
                     {r.t}
                   </JiraLink>
                 </td>
                 <td className="data-table__td data-table__td--num">
-                  <JiraLink href={dailyTotalDefectsLink(r.date, year)} plain>
+                  <JiraLink href={dailyTotalDefectsLink(r.date, year, components)} plain>
                     {r.d}
                   </JiraLink>
                 </td>
                 {PRIORITY_DEFS.map(p => (
                   <td key={p.key} className="data-table__td data-table__td--center">
-                    <JiraLink href={dailyPriorityLink(r.date, year, p.jira)}>
+                    <JiraLink href={dailyPriorityLink(r.date, year, p.jira, components)}>
                       <Chip value={r[p.key]} color={p.color} />
                     </JiraLink>
                   </td>
@@ -87,18 +90,18 @@ export default function DailyMetricsTable({ rows, totals, year, month }) {
             <tr className="data-table__foot-row">
               <td className="data-table__tfoot-cell data-table__tfoot-cell--label">Total</td>
               <td className="data-table__tfoot-cell data-table__tfoot-cell--val">
-                <JiraLink href={monthlyTotalTicketsLink(year, month)} plain>
+                <JiraLink href={monthlyTotalTicketsLink(year, month, components)} plain>
                   {totals.t}
                 </JiraLink>
               </td>
               <td className="data-table__tfoot-cell data-table__tfoot-cell--val">
-                <JiraLink href={monthlyTotalDefectsLink(year, month)} plain>
+                <JiraLink href={monthlyTotalDefectsLink(year, month, components)} plain>
                   {totals.d}
                 </JiraLink>
               </td>
               {PRIORITY_DEFS.map(p => (
                 <td key={p.key} className="data-table__tfoot-cell data-table__tfoot-cell--center">
-                  <JiraLink href={monthlyPriorityLink(year, month, p.jira)}>
+                  <JiraLink href={monthlyPriorityLink(year, month, p.jira, components)}>
                     <Chip value={totals[p.key]} color={p.color} />
                   </JiraLink>
                 </td>
@@ -122,16 +125,16 @@ export default function DailyMetricsTable({ rows, totals, year, month }) {
               </div>
               <div className="card-list__row">
                 <span className="card-list__key">Total Tickets</span>
-                <JiraLink href={dailyTotalTicketsLink(r.date, year)} plain>{r.t}</JiraLink>
+                <JiraLink href={dailyTotalTicketsLink(r.date, year, components)} plain>{r.t}</JiraLink>
               </div>
               <div className="card-list__row">
                 <span className="card-list__key">Total Defects</span>
-                <JiraLink href={dailyTotalDefectsLink(r.date, year)} plain>{r.d}</JiraLink>
+                <JiraLink href={dailyTotalDefectsLink(r.date, year, components)} plain>{r.d}</JiraLink>
               </div>
               {PRIORITY_DEFS.map(p => (
                 <div key={p.key} className="card-list__row">
                   <span className="card-list__key">{p.jira}</span>
-                  <JiraLink href={dailyPriorityLink(r.date, year, p.jira)}>
+                  <JiraLink href={dailyPriorityLink(r.date, year, p.jira, components)}>
                     <Chip value={r[p.key]} color={p.color} />
                   </JiraLink>
                 </div>

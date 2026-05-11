@@ -1,0 +1,218 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+// Prevent body scroll while a modal is open
+:global(.modal-open) {
+  overflow: hidden;
+}
+
+// ── Backdrop ─────────────────────────────────────────────────────────────────
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 74, 110, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  @include flex-center;
+  padding: $gutter-sm;
+  animation: backdrop-in 0.15s ease;
+
+  &--blocking {
+    cursor: default;
+  }
+}
+
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+// ── Container ─────────────────────────────────────────────────────────────────
+.modal {
+  background: $color-white;
+  border: 1px solid $color-sky-200;
+  border-radius: $border-radius-card;
+  box-shadow: 0 8px 40px rgba(2, 132, 199, 0.18);
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modal-in 0.18s ease;
+
+  // ── Variant borders ───────────────────────────────────────────────────────
+  &--auth    { border-color: $color-sky-200; }
+  &--warning { border-color: #fecdd3; }
+
+  // ── Header ────────────────────────────────────────────────────────────────
+  &__header {
+    @include flex-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid $color-sky-100;
+    background: $color-sky-50;
+    border-radius: $border-radius-card $border-radius-card 0 0;
+
+    &--auth    { background: $color-sky-50; }
+    &--warning { background: #fff1f2; border-bottom-color: #fecdd3; }
+  }
+
+  &__title {
+    font-size: 15px;
+    font-weight: 700;
+    color: $color-text-darkest;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__close {
+    background: none;
+    border: none;
+    color: $color-text-muted;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    transition: color 0.15s, background 0.15s;
+
+    &:hover {
+      color: $color-text-darkest;
+      background: $color-sky-100;
+    }
+  }
+
+  // ── Body ──────────────────────────────────────────────────────────────────
+  &__body {
+    padding: 20px;
+  }
+
+  @include respond-to(mobile) {
+    max-width: 100%;
+    margin: 0;
+    border-radius: 12px 12px 0 0;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 85vh;
+  }
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+// ── Shared modal-body elements ────────────────────────────────────────────────
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &__text {
+    font-size: 13px;
+    color: $color-text-dark;
+    line-height: 1.6;
+  }
+
+  &__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: $color-text-darkest;
+    margin-bottom: 6px;
+    display: block;
+
+    &--required::after {
+      content: ' *';
+      color: $color-critical;
+    }
+  }
+
+  &__input {
+    width: 100%;
+    background: $color-sky-50;
+    border: 1px solid $color-sky-200;
+    border-radius: $border-radius-btn;
+    color: $color-text-darkest;
+    padding: 9px 13px;
+    font-size: 13px;
+    font-family: $font-stack;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+
+    &::placeholder { color: $color-text-muted; }
+
+    &:focus {
+      border-color: $color-primary;
+      box-shadow: 0 0 0 3px rgba($color-primary, 0.12);
+    }
+
+    &--error {
+      border-color: $color-critical;
+      &:focus { box-shadow: 0 0 0 3px rgba($color-critical, 0.12); }
+    }
+  }
+
+  &__error {
+    font-size: 11px;
+    color: $color-critical;
+    margin-top: 4px;
+  }
+
+  &__hint {
+    font-size: 11px;
+    color: $color-text-muted;
+    margin-top: 4px;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 4px;
+  }
+}
+
+// ── Buttons ───────────────────────────────────────────────────────────────────
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: none;
+  border-radius: $border-radius-btn;
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: $font-stack;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+
+  &:active { transform: scale(0.97); }
+
+  &--primary {
+    background: $color-primary;
+    color: $color-white;
+    box-shadow: 0 2px 8px rgba($color-primary, 0.3);
+
+    &:hover { opacity: 0.9; }
+  }
+
+  &--secondary {
+    background: $color-sky-50;
+    color: $color-primary;
+    border: 1px solid $color-sky-200;
+
+    &:hover { background: $color-sky-100; }
+  }
+
+  &--danger {
+    background: #fff1f2;
+    color: $color-critical;
+    border: 1px solid #fecdd3;
+
+    &:hover { background: #ffe4e6; }
+  }
+
+  &--full { width: 100%; }
+}

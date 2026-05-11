@@ -1,0 +1,68 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+.settings-panel {
+  gap: 20px;
+
+  // ── Dashboard view radio list ─────────────────────────────────────────────
+  &__views {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  &__view {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 11px 14px;
+    border: 1.5px solid $color-sky-100;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    background: $color-white;
+
+    &:hover {
+      border-color: $color-primary;
+      background: $color-sky-50;
+    }
+
+    &--active {
+      border-color: $color-primary;
+      background: $color-sky-50;
+    }
+  }
+
+  &__radio {
+    margin-top: 2px;
+    accent-color: $color-primary;
+    flex-shrink: 0;
+  }
+
+  &__view-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: $color-text-darkest;
+    margin-bottom: 2px;
+  }
+
+  &__view-desc {
+    font-size: 11px;
+    color: $color-text-muted;
+    line-height: 1.4;
+  }
+
+  // ── Actions row ───────────────────────────────────────────────────────────
+  &__actions {
+    justify-content: space-between !important;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  // ── Save confirmation state ───────────────────────────────────────────────
+  &__btn--saved {
+    background: $color-success !important;
+    pointer-events: none;
+  }
+}

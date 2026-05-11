@@ -1,15 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as api from '../services/jiraApi';
 import {
-  MOCK_DEFECTS_BY_PRIORITY,
-  MOCK_DEFECTS_BY_STATUS,
-  MOCK_IMPL_TICKETS,
-  MOCK_DEFECTS_TABLE,
-  MOCK_RELEASE_ROWS,
-  MOCK_TOTALS,
-  MOCK_QUARTERS,
-  MOCK_HEALTH_SCORE,
-  MOCK_TODAY_LABEL,
+  MOCK_DEFECTS_BY_PRIORITY, MOCK_DEFECTS_BY_STATUS, MOCK_IMPL_TICKETS,
+  MOCK_DEFECTS_TABLE, MOCK_RELEASE_ROWS, MOCK_TOTALS,
+  MOCK_QUARTERS, MOCK_HEALTH_SCORE, MOCK_TODAY_LABEL,
 } from '../services/mockData';
 
 const JIRA_CONFIGURED = !!import.meta.env.VITE_JIRA_BASE_URL;
@@ -21,13 +15,15 @@ function buildTotals(rows) {
   const h  = rows.reduce((s, r) => s + (r.h || 0), 0);
   const m  = rows.reduce((s, r) => s + (r.m || 0), 0);
   const l  = rows.reduce((s, r) => s + (r.l || 0), 0);
-  const hs = t > 0 ? parseFloat(((rows.reduce((s, r) => s + (r.hs || 0), 0) / rows.length)).toFixed(2)) : null;
+  const hs = rows.length > 0
+    ? parseFloat((rows.reduce((s, r) => s + (r.hs || 0), 0) / rows.length).toFixed(2))
+    : null;
   return { t, d, c, h, m, l, hs };
 }
 
-export function useJiraData(year, month) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+export function useJiraData(year, month, components) {
+  const [data,      setData]      = useState(null);
+  const [loading,   setLoading]   = useState(true);
   const [usingMock, setUsingMock] = useState(false);
 
   const load = useCallback(async () => {
@@ -43,11 +39,11 @@ export function useJiraData(year, month) {
 
     try {
       const [priority, status, daily, health, impl] = await Promise.all([
-        api.fetchDefectsByPriority(year, month),
-        api.fetchDefectsByStatus(year, month),
-        api.fetchDailyMetrics(year, month),
-        api.fetchHealthScore(year, month),
-        api.fetchImplTickets(),
+        api.fetchDefectsByPriority(year, month, components),
+        api.fetchDefectsByStatus(year, month, components),
+        api.fetchDailyMetrics(year, month, components),
+        api.fetchHealthScore(year, month, components),
+        api.fetchImplTickets(components),
       ]);
 
       setData({
@@ -57,7 +53,7 @@ export function useJiraData(year, month) {
         totals:            buildTotals(daily),
         healthScore:       health,
         implTickets:       impl,
-        defectsTable:      MOCK_DEFECTS_TABLE,  // no JIRA endpoint maps 1-to-1; keep mock
+        defectsTable:      MOCK_DEFECTS_TABLE,
         quarters:          MOCK_QUARTERS,
         todayLabel:        MOCK_TODAY_LABEL,
       });
@@ -68,7 +64,7 @@ export function useJiraData(year, month) {
     } finally {
       setLoading(false);
     }
-  }, [year, month]);
+  }, [year, month, components]);
 
   useEffect(() => { load(); }, [load]);
 

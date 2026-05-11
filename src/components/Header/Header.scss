@@ -47,12 +47,53 @@
     letter-spacing: 0.06em;
     text-transform: uppercase;
     margin-top: 1px;
+
+    &--team {
+      color: $color-primary;
+      font-weight: 600;
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 12px;
+    }
   }
 
   &__controls {
     display: flex;
     gap: 8px;
     flex-shrink: 0;
+    align-items: center;
+  }
+
+  &__settings-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    background: $color-sky-50;
+    border: 1px solid $color-sky-200;
+    border-radius: $border-radius-btn;
+    color: $color-sky-300;
+    cursor: pointer;
+    padding: 0;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+    flex-shrink: 0;
+
+    &:hover {
+      border-color: $color-primary;
+      background: $color-sky-100;
+      color: $color-primary;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
+    }
+  }
+
+  &--filtered {
+    border-bottom-color: $color-primary;
+    box-shadow: 0 1px 0 0 rgba($color-primary, 0.15), $shadow-header;
   }
 
   &__select {

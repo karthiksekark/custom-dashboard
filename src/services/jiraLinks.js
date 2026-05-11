@@ -14,89 +14,100 @@ function buildUrl(jql) {
   return `${JIRA_BASE}/issues/?jql=${encodeURIComponent(jql)}`;
 }
 
-// "4/28" + "2026" → "2026-04-28"
 function rowDateToIso(dateStr, year) {
   const [m, d] = dateStr.split('/');
   return `${year}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
 }
 
+function compClause(components) {
+  if (!components?.trim()) return '';
+  const names = components.split(',').map(c => c.trim()).filter(Boolean);
+  return names.length ? ` AND component in (${names.map(n => `"${n}"`).join(', ')})` : '';
+}
+
 // ── Implementation table ──────────────────────────────────────────────────────
-// Per-team cell: clicking UAT/OPUAT/CR_UAT/BIZ_VAL/Total for a team on todayIso
-export function implTeamFieldLink(team, field, todayIso) {
-  const jql = field === 'Total'
-    ? `${projectClause()} AND assignee = "${team}" AND created = "${todayIso}"`
-    : `${projectClause()} AND labels = "${field}" AND assignee = "${team}" AND created = "${todayIso}"`;
+export function implTeamFieldLink(team, field, todayIso, components) {
+  const comp = compClause(components);
+  const jql  = field === 'Total'
+    ? `${projectClause()}${comp} AND assignee = "${team}" AND created = "${todayIso}"`
+    : `${projectClause()}${comp} AND labels = "${field}" AND assignee = "${team}" AND created = "${todayIso}"`;
   return buildUrl(jql);
 }
 
-// Consolidated-total row: clicking a column total across all teams
-export function implConsolidatedFieldLink(field, todayIso) {
-  const jql = field === 'Total'
-    ? `${projectClause()} AND created = "${todayIso}"`
-    : `${projectClause()} AND labels = "${field}" AND created = "${todayIso}"`;
+export function implConsolidatedFieldLink(field, todayIso, components) {
+  const comp = compClause(components);
+  const jql  = field === 'Total'
+    ? `${projectClause()}${comp} AND created = "${todayIso}"`
+    : `${projectClause()}${comp} AND labels = "${field}" AND created = "${todayIso}"`;
   return buildUrl(jql);
 }
 
 // ── Defects-alert table ───────────────────────────────────────────────────────
-// Per-status row: clicking a priority cell for a specific status
-export function defectStatusPriorityLink(status, priority, todayIso) {
+export function defectStatusPriorityLink(status, priority, todayIso, components) {
+  const comp     = compClause(components);
   const prClause = priority ? ` AND priority = "${priority}"` : '';
-  const jql = `issuetype = Bug AND status = "${status}"${prClause} AND created <= "${todayIso}"`;
-  return buildUrl(jql);
+  return buildUrl(`issuetype = Bug${comp} AND status = "${status}"${prClause} AND created <= "${todayIso}"`);
 }
 
-// Consolidated-total row: clicking across all open statuses, optionally filtered by priority
-export function defectConsolidatedLink(priority, todayIso) {
+export function defectConsolidatedLink(priority, todayIso, components) {
+  const comp     = compClause(components);
   const prClause = priority ? ` AND priority = "${priority}"` : '';
-  const jql = `issuetype = Bug AND status in (Open, "In Progress", Reopened, "Pending Review")${prClause} AND created <= "${todayIso}"`;
-  return buildUrl(jql);
+  return buildUrl(`issuetype = Bug${comp} AND status in (Open, "In Progress", Reopened, "Pending Review")${prClause} AND created <= "${todayIso}"`);
 }
 
 // ── Daily metrics table ───────────────────────────────────────────────────────
-export function dailyTotalTicketsLink(dateStr, year) {
-  const iso = rowDateToIso(dateStr, year);
-  return buildUrl(`${projectClause()} AND created = "${iso}"`);
+export function dailyTotalTicketsLink(dateStr, year, components) {
+  const iso  = rowDateToIso(dateStr, year);
+  const comp = compClause(components);
+  return buildUrl(`${projectClause()}${comp} AND created = "${iso}"`);
 }
 
-export function dailyTotalDefectsLink(dateStr, year) {
-  const iso = rowDateToIso(dateStr, year);
-  return buildUrl(`issuetype = Bug AND created = "${iso}"`);
+export function dailyTotalDefectsLink(dateStr, year, components) {
+  const iso  = rowDateToIso(dateStr, year);
+  const comp = compClause(components);
+  return buildUrl(`issuetype = Bug${comp} AND created = "${iso}"`);
 }
 
-export function dailyPriorityLink(dateStr, year, priority) {
-  const iso = rowDateToIso(dateStr, year);
-  return buildUrl(`issuetype = Bug AND priority = "${priority}" AND created = "${iso}"`);
+export function dailyPriorityLink(dateStr, year, priority, components) {
+  const iso  = rowDateToIso(dateStr, year);
+  const comp = compClause(components);
+  return buildUrl(`issuetype = Bug${comp} AND priority = "${priority}" AND created = "${iso}"`);
 }
 
-// Monthly totals row (tfoot)
-export function monthlyTotalTicketsLink(year, month) {
+// Monthly totals (tfoot)
+export function monthlyTotalTicketsLink(year, month, components) {
   const start = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).format('YYYY-MM-DD');
   const end   = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).endOf('month').format('YYYY-MM-DD');
-  return buildUrl(`${projectClause()} AND created >= "${start}" AND created <= "${end}"`);
+  const comp  = compClause(components);
+  return buildUrl(`${projectClause()}${comp} AND created >= "${start}" AND created <= "${end}"`);
 }
 
-export function monthlyTotalDefectsLink(year, month) {
+export function monthlyTotalDefectsLink(year, month, components) {
   const start = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).format('YYYY-MM-DD');
   const end   = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).endOf('month').format('YYYY-MM-DD');
-  return buildUrl(`issuetype = Bug AND created >= "${start}" AND created <= "${end}"`);
+  const comp  = compClause(components);
+  return buildUrl(`issuetype = Bug${comp} AND created >= "${start}" AND created <= "${end}"`);
 }
 
-export function monthlyPriorityLink(year, month, priority) {
+export function monthlyPriorityLink(year, month, priority, components) {
   const start = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).format('YYYY-MM-DD');
   const end   = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).endOf('month').format('YYYY-MM-DD');
-  return buildUrl(`issuetype = Bug AND priority = "${priority}" AND created >= "${start}" AND created <= "${end}"`);
+  const comp  = compClause(components);
+  return buildUrl(`issuetype = Bug${comp} AND priority = "${priority}" AND created >= "${start}" AND created <= "${end}"`);
 }
 
 // ── Quarterly cards ───────────────────────────────────────────────────────────
-// qStart / qEnd: "YYYY-MM-DD" strings
-export function quarterTotalTicketsLink(qStart, qEnd) {
-  return buildUrl(`${projectClause()} AND created >= "${qStart}" AND created <= "${qEnd}"`);
+export function quarterTotalTicketsLink(qStart, qEnd, components) {
+  const comp = compClause(components);
+  return buildUrl(`${projectClause()}${comp} AND created >= "${qStart}" AND created <= "${qEnd}"`);
 }
 
-export function quarterTotalDefectsLink(qStart, qEnd) {
-  return buildUrl(`issuetype = Bug AND created >= "${qStart}" AND created <= "${qEnd}"`);
+export function quarterTotalDefectsLink(qStart, qEnd, components) {
+  const comp = compClause(components);
+  return buildUrl(`issuetype = Bug${comp} AND created >= "${qStart}" AND created <= "${qEnd}"`);
 }
 
-export function quarterPriorityLink(qStart, qEnd, priority) {
-  return buildUrl(`issuetype = Bug AND priority = "${priority}" AND created >= "${qStart}" AND created <= "${qEnd}"`);
+export function quarterPriorityLink(qStart, qEnd, priority, components) {
+  const comp = compClause(components);
+  return buildUrl(`issuetype = Bug${comp} AND priority = "${priority}" AND created >= "${qStart}" AND created <= "${qEnd}"`);
 }

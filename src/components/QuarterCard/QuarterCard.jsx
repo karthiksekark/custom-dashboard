@@ -6,21 +6,24 @@ import {
   quarterTotalDefectsLink,
   quarterPriorityLink,
 } from '../../services/jiraLinks';
+import { useAppContext } from '../../hooks/useAppContext';
 import './QuarterCard.scss';
 
 export default function QuarterCard({ quarter, isActive }) {
+  const { state }  = useAppContext();
+  const components = state.preferences.components;
   const { q, period, days, tickets, defects, c, h, m, l, hs, acc, startDate, endDate } = quarter;
   const empty = days === 0;
   const hc    = healthColor(hs);
 
   const rows = [
     { label: 'Release Days',  val: empty ? '—' : days,    link: null,                                               color: null       },
-    { label: 'Total Tickets', val: empty ? '—' : tickets, link: quarterTotalTicketsLink(startDate, endDate),        color: '#334155'  },
-    { label: 'Total Defects', val: empty ? '—' : defects, link: quarterTotalDefectsLink(startDate, endDate),        color: '#334155'  },
-    { label: 'Critical',      val: empty ? '—' : c,       link: quarterPriorityLink(startDate, endDate, 'Critical'),color: '#dc2626'  },
-    { label: 'High',          val: empty ? '—' : h,       link: quarterPriorityLink(startDate, endDate, 'High'),    color: '#ea580c'  },
-    { label: 'Medium',        val: empty ? '—' : m,       link: quarterPriorityLink(startDate, endDate, 'Medium'),  color: '#ca8a04'  },
-    { label: 'Low',           val: empty ? '—' : l,       link: quarterPriorityLink(startDate, endDate, 'Low'),     color: '#0284c7'  },
+    { label: 'Total Tickets', val: empty ? '—' : tickets, link: quarterTotalTicketsLink(startDate, endDate, components),        color: '#334155'  },
+    { label: 'Total Defects', val: empty ? '—' : defects, link: quarterTotalDefectsLink(startDate, endDate, components),        color: '#334155'  },
+    { label: 'Critical',      val: empty ? '—' : c,       link: quarterPriorityLink(startDate, endDate, 'Critical', components),color: '#dc2626'  },
+    { label: 'High',          val: empty ? '—' : h,       link: quarterPriorityLink(startDate, endDate, 'High', components),    color: '#ea580c'  },
+    { label: 'Medium',        val: empty ? '—' : m,       link: quarterPriorityLink(startDate, endDate, 'Medium', components),  color: '#ca8a04'  },
+    { label: 'Low',           val: empty ? '—' : l,       link: quarterPriorityLink(startDate, endDate, 'Low', components),     color: '#0284c7'  },
     { label: 'Avg. Health',   val: empty ? '—' : hs,      link: null,                                               color: hc         },
   ];
 
