@@ -28,15 +28,10 @@ export async function persistPreferences(prefs) {
 async function runAuthCheck(dispatch) {
   const result = await checkSession();
 
-  if (result === 'ok') {
+  if (result === 'ok' || result === 'bypassed') {
     dispatch({ type: 'AUTH_SUCCESS' });
-  } else if (result === 'redirect') {
-    // Option B: navigate same tab to JIRA login
-    const jiraBase = import.meta.env.VITE_JIRA_BASE_URL;
-    const returnUrl = globalThis.chrome?.runtime?.getURL?.('index.html') ?? window.location.href;
-    window.location.href = `${jiraBase}/login.jsp?os_destination=${encodeURIComponent(returnUrl)}`;
   } else {
-    // 'no-cookie' or error
+    // 'no-cookie', 'redirect', or fetch error — show AuthModal
     dispatch({ type: 'AUTH_FAILURE' });
   }
 }
@@ -52,6 +47,20 @@ export function AppProvider({ children }) {
   useEffect(() => {
     if (state.storageLoaded) runAuthCheck(dispatch);
   }, [state.storageLoaded]);
+
+  // Step 3: when auth has failed, re-check each time the tab regains focus.
+  // The user opens JIRA login in a new tab (via AuthModal), logs in, then
+  // switches back here — at that point the JSESSIONID cookie will be present.
+  useEffect(() => {
+    if (state.isAuth !== false) return;
+
+    function handleVisibility() {
+      if (document.visibilityState === 'visible') runAuthCheck(dispatch);
+    }
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [state.isAuth]);
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>

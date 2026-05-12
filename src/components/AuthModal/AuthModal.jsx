@@ -40,8 +40,8 @@ export default function AuthModal() {
               Login to JIRA
             </button>
             <p className="auth-modal__note">
-              You will be redirected to JIRA. After logging in, return to the
-              dashboard to continue.
+              JIRA will open in a new tab. After logging in, switch back to
+              this tab — the dashboard will resume automatically.
             </p>
           </>
         ) : (
