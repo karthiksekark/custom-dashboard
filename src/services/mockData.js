@@ -59,6 +59,18 @@ export const MOCK_QUARTERS = [
   { q: '4Q26', period: 'Oct–Dec 2026', days:  0, tickets:    0, defects:   0, c:  0, h:   0, m:   0, l:  0, hs: null,  acc: '#38bdf8' },
 ];
 
+export const MOCK_CURRENT_DAY_FED = {
+  impl:       [{ name: 'UAT', value: 3 }, { name: 'NOUAT', value: 7 }],
+  defects:    [{ name: 'High', value: 5 }, { name: 'Medium', value: 3 }],
+  regression: [],
+};
+
+export const MOCK_CURRENT_DAY_CATALOG = {
+  impl:       [{ name: 'UAT', value: 4 }, { name: 'OPUAT', value: 2 }, { name: 'NOUAT', value: 6 }],
+  defects:    [{ name: 'Critical', value: 1 }, { name: 'High', value: 3 }, { name: 'Medium', value: 2 }, { name: 'Low', value: 1 }],
+  regression: [{ name: 'High', value: 2 }],
+};
+
 export const MOCK_HEALTH_SCORE = 82;
 
 export const MOCK_TODAY_LABEL = '4/29/2026';

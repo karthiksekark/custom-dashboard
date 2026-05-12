@@ -115,6 +115,53 @@ export async function fetchHealthScore(year, month, components) {
   return Math.round((closed / data.issues.length) * 100);
 }
 
+export async function fetchCurrentDayImplByLabel(components) {
+  const today = moment().tz(EST).format('YYYY-MM-DD');
+  const jql   = `created = "${today}"${compClause(components)} ORDER BY created DESC`;
+  const data  = await jqlSearch(jql);
+
+  const counts = { UAT: 0, OPUAT: 0, CR_UAT: 0, NOUAT: 0 };
+  data.issues.forEach(issue => {
+    const labels = issue.fields.labels || [];
+    if (labels.includes('UAT'))    counts.UAT    += 1;
+    if (labels.includes('OPUAT'))  counts.OPUAT  += 1;
+    if (labels.includes('CR_UAT')) counts.CR_UAT += 1;
+    if (labels.includes('NOUAT'))  counts.NOUAT  += 1;
+  });
+
+  return ['UAT', 'OPUAT', 'CR_UAT', 'NOUAT']
+    .filter(k => counts[k] > 0)
+    .map(name => ({ name, value: counts[name] }));
+}
+
+export async function fetchCurrentDayDefectsByPriority(components) {
+  const today = moment().tz(EST).format('YYYY-MM-DD');
+  const jql   = `issuetype = Bug${compClause(components)} AND created = "${today}"`;
+  const data  = await jqlSearch(jql);
+
+  const counts = {};
+  data.issues.forEach(issue => {
+    const p = issue.fields.priority?.name || 'Unknown';
+    counts[p] = (counts[p] || 0) + 1;
+  });
+
+  return ['Critical', 'High', 'Medium', 'Low'].filter(k => counts[k]).map(name => ({ name, value: counts[name] }));
+}
+
+export async function fetchRegressionDefectsByPriority(components) {
+  const today = moment().tz(EST).format('YYYY-MM-DD');
+  const jql   = `issuetype = Bug AND labels = "Regression"${compClause(components)} AND created = "${today}"`;
+  const data  = await jqlSearch(jql);
+
+  const counts = {};
+  data.issues.forEach(issue => {
+    const p = issue.fields.priority?.name || 'Unknown';
+    counts[p] = (counts[p] || 0) + 1;
+  });
+
+  return ['Critical', 'High', 'Medium', 'Low'].filter(k => counts[k]).map(name => ({ name, value: counts[name] }));
+}
+
 export async function fetchImplTickets(components) {
   const today = moment().tz(EST).format('YYYY-MM-DD');
   const jql   = `created = "${today}"${compClause(components)} ORDER BY assignee ASC`;

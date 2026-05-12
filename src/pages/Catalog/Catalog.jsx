@@ -1,17 +1,21 @@
 import PropTypes from 'prop-types';
-import '../FED/FED.scss';
+import { useCurrentDayData } from '../../hooks/useCurrentDayData';
+import CurrentDaySection from '../../components/CurrentDaySection/CurrentDaySection';
+import { MOCK_CURRENT_DAY_CATALOG } from '../../services/mockData';
+import './Catalog.scss';
 
-export default function Catalog({ month, year }) {
+export default function Catalog({ components }) {
+  const { data, loading, todayLabel } = useCurrentDayData(components, MOCK_CURRENT_DAY_CATALOG);
+
+  if (loading || !data) return null;
+
   return (
-    <div className="stub-page">
-      <div className="stub-page__icon">📦</div>
-      <div className="stub-page__title">Catalog</div>
-      <div className="stub-page__sub">Content for {month} {year} coming soon.</div>
+    <div className="catalog-page">
+      <CurrentDaySection data={data} todayLabel={todayLabel} />
     </div>
   );
 }
 
 Catalog.propTypes = {
-  month: PropTypes.string.isRequired,
-  year:  PropTypes.string.isRequired,
+  components: PropTypes.string.isRequired,
 };
