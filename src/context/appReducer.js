@@ -1,6 +1,12 @@
+const TEAM_KEYS = ['release-management', 'fed', 'catalog'];
+
 export const DEFAULT_PREFERENCES = {
-  dashboardView: 'default',
-  components:    '',
+  dashboardView:  'default',
+  teamComponents: {
+    'release-management': '',
+    'fed':                '',
+    'catalog':            '',
+  },
 };
 
 export const initialState = {
@@ -11,16 +17,36 @@ export const initialState = {
   settingsOpen:  false,
 };
 
+function isFullyConfigured(prefs) {
+  const tc = prefs.teamComponents || {};
+  return TEAM_KEYS.every(k => !!tc[k]?.trim());
+}
+
+// Migrate from old single `components` field — pre-populate all three teams
+function migrateLegacy(raw) {
+  if (!raw) return DEFAULT_PREFERENCES;
+  if (raw.teamComponents) return raw;
+  const legacy = raw.components?.trim() || '';
+  return {
+    dashboardView:  raw.dashboardView || 'default',
+    teamComponents: {
+      'release-management': legacy,
+      'fed':                legacy,
+      'catalog':            legacy,
+    },
+  };
+}
+
 export function appReducer(state, action) {
   switch (action.type) {
 
     case 'STORAGE_LOADED': {
-      const prefs = action.payload ?? DEFAULT_PREFERENCES;
+      const prefs = migrateLegacy(action.payload);
       return {
         ...state,
         storageLoaded: true,
         preferences:   prefs,
-        isConfigured:  !!prefs.components?.trim(),
+        isConfigured:  isFullyConfigured(prefs),
       };
     }
 
@@ -35,7 +61,7 @@ export function appReducer(state, action) {
       return {
         ...state,
         preferences:  prefs,
-        isConfigured: !!prefs.components?.trim(),
+        isConfigured: isFullyConfigured(prefs),
       };
     }
 
