@@ -66,7 +66,6 @@ export const MOCK_TAB_FED = {
     regression: [],
   },
   rootCause: {
-    // Today's data — feeds existing side-by-side tables (RootCauseSection)
     today: {
       defects: {
         FED_Triaged:  { Critical: 0, High: 0, Medium: 1, Low: 0 },
@@ -85,7 +84,6 @@ export const MOCK_TAB_FED = {
         FED_CacheCLR: { Critical: 0, High: 0, Medium: 0, Low: 0 },
       },
     },
-    // Monthly data — feeds new pie+table+pie sections (RootCausePrioritySection)
     monthly: {
       defects: {
         FED_Triaged:  { Critical: 0, High: 2, Medium: 1, Low: 0 },
@@ -113,6 +111,25 @@ export const MOCK_TAB_FED = {
       { name: 'Low',    value: 5 },
     ],
   },
+  dailyMetrics: {
+    rows: [
+      { date: '5/12', t: 30, d: 8,  c: 1,    h: 3, m: 3, l: 1,    rg: 2,    fp: 5,    dp: 2,    hs: 73.33 },
+      { date: '5/9',  t: 25, d: 5,  c: null, h: 2, m: 2, l: 1,    rg: 1,    fp: 4,    dp: 1,    hs: 80.00 },
+      { date: '5/8',  t: 18, d: 3,  c: null, h: 1, m: 2, l: null, rg: null, fp: 3,    dp: null, hs: 83.33 },
+      { date: '5/7',  t: 42, d: 12, c: 2,    h: 5, m: 4, l: 1,    rg: 3,    fp: 7,    dp: 3,    hs: 71.43 },
+      { date: '5/6',  t: 15, d: 2,  c: null, h: 1, m: 1, l: null, rg: null, fp: 2,    dp: 1,    hs: 86.67 },
+      { date: '5/5',  t: 20, d: 6,  c: 1,    h: 2, m: 2, l: 1,    rg: 1,    fp: 3,    dp: 1,    hs: 70.00 },
+      { date: '5/2',  t: 35, d: 9,  c: null, h: 4, m: 4, l: 1,    rg: 2,    fp: 6,    dp: 2,    hs: 74.29 },
+      { date: '5/1',  t: 28, d: 7,  c: 1,    h: 3, m: 2, l: 1,    rg: 2,    fp: 5,    dp: 1,    hs: 75.00 },
+    ],
+    totals: { t: 213, d: 52, c: 5, h: 21, m: 18, l: 6, rg: 11, fp: 35, dp: 11, hs: 75.59 },
+  },
+  quarters: [
+    { q: '1Q26', period: 'Jan–Mar 2026', days: 59, tickets: 800,  defects: 200, rg: 40, fp: 120, c:  5, h: 100, m:  80, l: 15, hs: 75.00, acc: '#0284c7', startDate: '2026-01-01', endDate: '2026-03-31' },
+    { q: '2Q26', period: 'Apr–Jun 2026', days: 28, tickets: 213,  defects:  52, rg: 11, fp:  35, c:  5, h:  21, m:  18, l:  6, hs: 75.59, acc: '#0369a1', startDate: '2026-04-01', endDate: '2026-06-30' },
+    { q: '3Q26', period: 'Jul–Sep 2026', days:  0, tickets:   0,  defects:   0, rg:  0, fp:   0, c:  0, h:   0, m:   0, l:  0, hs: null,  acc: '#0ea5e9', startDate: '2026-07-01', endDate: '2026-09-30' },
+    { q: '4Q26', period: 'Oct–Dec 2026', days:  0, tickets:   0,  defects:   0, rg:  0, fp:   0, c:  0, h:   0, m:   0, l:  0, hs: null,  acc: '#38bdf8', startDate: '2026-10-01', endDate: '2026-12-31' },
+  ],
 };
 
 export const MOCK_TAB_CATALOG = {
@@ -168,6 +185,25 @@ export const MOCK_TAB_CATALOG = {
       { name: 'Low',      value: 2 },
     ],
   },
+  dailyMetrics: {
+    rows: [
+      { date: '5/12', t: 22, d: 7,  c: 1,    h: 3, m: 2, l: 1,    rg: 2,    fp: 4,    dp: 1,    hs: 68.18 },
+      { date: '5/9',  t: 18, d: 4,  c: null, h: 2, m: 2, l: null, rg: 1,    fp: 3,    dp: 1,    hs: 77.78 },
+      { date: '5/8',  t: 14, d: 2,  c: null, h: 1, m: 1, l: null, rg: null, fp: 2,    dp: null, hs: 85.71 },
+      { date: '5/7',  t: 38, d: 10, c: 2,    h: 4, m: 3, l: 1,    rg: 3,    fp: 6,    dp: 2,    hs: 73.68 },
+      { date: '5/6',  t: 12, d: 3,  c: null, h: 1, m: 2, l: null, rg: null, fp: 2,    dp: null, hs: 75.00 },
+      { date: '5/5',  t: 16, d: 5,  c: 1,    h: 2, m: 2, l: null, rg: 1,    fp: 2,    dp: 1,    hs: 68.75 },
+      { date: '5/2',  t: 28, d: 8,  c: null, h: 3, m: 4, l: 1,    rg: 2,    fp: 5,    dp: 2,    hs: 71.43 },
+      { date: '5/1',  t: 20, d: 5,  c: null, h: 2, m: 2, l: 1,    rg: 1,    fp: 4,    dp: 1,    hs: 75.00 },
+    ],
+    totals: { t: 168, d: 44, c: 4, h: 18, m: 16, l: 4, rg: 10, fp: 28, dp: 8, hs: 73.81 },
+  },
+  quarters: [
+    { q: '1Q26', period: 'Jan–Mar 2026', days: 59, tickets: 650,  defects: 180, rg: 35, fp:  95, c:  4, h:  85, m:  70, l: 21, hs: 72.31, acc: '#0284c7', startDate: '2026-01-01', endDate: '2026-03-31' },
+    { q: '2Q26', period: 'Apr–Jun 2026', days: 28, tickets: 168,  defects:  44, rg: 10, fp:  28, c:  4, h:  18, m:  16, l:  4, hs: 73.81, acc: '#0369a1', startDate: '2026-04-01', endDate: '2026-06-30' },
+    { q: '3Q26', period: 'Jul–Sep 2026', days:  0, tickets:   0,  defects:   0, rg:  0, fp:   0, c:  0, h:   0, m:   0, l:  0, hs: null,  acc: '#0ea5e9', startDate: '2026-07-01', endDate: '2026-09-30' },
+    { q: '4Q26', period: 'Oct–Dec 2026', days:  0, tickets:   0,  defects:   0, rg:  0, fp:   0, c:  0, h:   0, m:   0, l:  0, hs: null,  acc: '#38bdf8', startDate: '2026-10-01', endDate: '2026-12-31' },
+  ],
 };
 
 export const MOCK_HEALTH_SCORE = 82;

@@ -1,9 +1,13 @@
 import PropTypes from 'prop-types';
 import { useTabData } from '../../hooks/useTabData';
+import Card from '../../components/Card/Card';
+import SectionHeader from '../../components/SectionHeader/SectionHeader';
 import CurrentDaySection from '../../components/CurrentDaySection/CurrentDaySection';
 import RootCauseSection from '../../components/RootCauseSection/RootCauseSection';
 import MonthlyMetricsSection from '../../components/MonthlyMetricsSection/MonthlyMetricsSection';
 import RootCausePrioritySection from '../../components/RootCausePrioritySection/RootCausePrioritySection';
+import TabDailyMetricsTable from '../../components/Tables/TabDailyMetricsTable';
+import TabQuarterSection from '../../components/TabQuarterSection/TabQuarterSection';
 import { MOCK_TAB_FED } from '../../services/mockData';
 import './FED.scss';
 
@@ -49,6 +53,16 @@ export default function FED({ year, month, monthLabel, components }) {
         rootCauses={FED_ROOT_CAUSES}
         data={data.rootCause.monthly.regression}
       />
+      <Card>
+        <SectionHeader eyebrow="Detailed Breakdown" title={`Daily Release Metrics — ${monthLabel}`} />
+        <TabDailyMetricsTable
+          rows={data.dailyMetrics.rows}
+          totals={data.dailyMetrics.totals}
+          year={year}
+          month={month}
+        />
+      </Card>
+      <TabQuarterSection quarters={data.quarters} year={year} month={month} />
     </div>
   );
 }

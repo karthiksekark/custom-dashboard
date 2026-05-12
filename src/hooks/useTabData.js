@@ -27,6 +27,7 @@ export function useTabData({ year, month, components, rcLabels, mockData }) {
         todayDefectsByRC, todayRegressionByRC,
         monthlyDefectsByRC, monthlyRegressionByRC,
         healthScore, defectsByPriority,
+        dailyMetrics, quarters,
       ] = await Promise.all([
         api.fetchCurrentDayImplByLabel(components),
         api.fetchCurrentDayDefectsByPriority(components),
@@ -37,6 +38,8 @@ export function useTabData({ year, month, components, rcLabels, mockData }) {
         api.fetchRegressionByRootCause(year, month, components, rcLabels),
         api.fetchHealthScore(year, month, components),
         api.fetchDefectsByPriority(year, month, components),
+        api.fetchTabDailyMetrics(year, month, components),
+        api.fetchTabQuarters(year, components),
       ]);
 
       setData({
@@ -46,6 +49,8 @@ export function useTabData({ year, month, components, rcLabels, mockData }) {
           monthly: { defects: monthlyDefectsByRC, regression: monthlyRegressionByRC },
         },
         monthly: { healthScore, defectsByPriority },
+        dailyMetrics,
+        quarters,
       });
       setUsingMock(false);
     } catch {
