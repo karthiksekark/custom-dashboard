@@ -25,7 +25,7 @@ function quarterDateRange(yearStr, qIndex) {
   return { startDate: start, endDate: end };
 }
 
-export default function ReleaseMgmt({ data, year, month }) {
+export default function ReleaseMgmt({ data, year, month, isCurrentPeriod }) {
   // ── Derived date values (all EST) ──────────────────────────────────────────
   const todayMoment  = moment().tz(EST);
   const todayLabel   = todayMoment.format('M/D/YYYY');
@@ -48,8 +48,25 @@ export default function ReleaseMgmt({ data, year, month }) {
   return (
     <div className="release-mgmt">
 
-      {/* ── Row 1: Health gauge + Implementation table ── */}
-      <div className="release-mgmt__top-grid">
+      {/* ── Row 1: Health gauge + (current period only) Implementation table ── */}
+      {isCurrentPeriod ? (
+        <div className="release-mgmt__top-grid">
+          <Card>
+            <SectionHeader eyebrow="Health Monitor" title="Today's Health Score" />
+            <div className="release-mgmt__health-body">
+              <DoughnutGauge score={data.healthScore} />
+              <div className="release-mgmt__health-badge" style={{ '--hc': hc }}>
+                ↑ +5 pts vs yesterday
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <SectionHeader eyebrow="Implementation" title={`Current Day's Tickets — ${todayLabel}`} />
+            <ImplementationTable rows={data.implTickets} todayIso={todayIso} />
+          </Card>
+        </div>
+      ) : (
         <Card>
           <SectionHeader eyebrow="Health Monitor" title="Today's Health Score" />
           <div className="release-mgmt__health-body">
@@ -59,18 +76,15 @@ export default function ReleaseMgmt({ data, year, month }) {
             </div>
           </div>
         </Card>
+      )}
 
-        <Card>
-          <SectionHeader eyebrow="Implementation" title={`Current Day's Tickets — ${todayLabel}`} />
-          <ImplementationTable rows={data.implTickets} todayIso={todayIso} />
+      {/* ── Row 2: Defects alert (current period only) ── */}
+      {isCurrentPeriod && (
+        <Card variant="alert">
+          <SectionHeader eyebrow="⚠ Alert" title={`Defects Not Closed before 8am — ${todayLabel}`} variant="alert" />
+          <DefectsAlertTable rows={data.defectsTable} todayIso={todayIso} />
         </Card>
-      </div>
-
-      {/* ── Row 2: Defects alert ── */}
-      <Card variant="alert">
-        <SectionHeader eyebrow="⚠ Alert" title={`Defects Not Closed before 8am — ${todayLabel}`} variant="alert" />
-        <DefectsAlertTable rows={data.defectsTable} todayIso={todayIso} />
-      </Card>
+      )}
 
       {/* ── Row 3: Pie charts ── */}
       <Card>
@@ -111,7 +125,8 @@ export default function ReleaseMgmt({ data, year, month }) {
 }
 
 ReleaseMgmt.propTypes = {
-  data:  PropTypes.object.isRequired,
-  year:  PropTypes.string.isRequired,
-  month: PropTypes.string.isRequired,
+  data:             PropTypes.object.isRequired,
+  year:             PropTypes.string.isRequired,
+  month:            PropTypes.string.isRequired,
+  isCurrentPeriod:  PropTypes.bool.isRequired,
 };
