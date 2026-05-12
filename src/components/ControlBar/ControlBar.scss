@@ -6,6 +6,9 @@ $select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 .control-bar {
   background: $color-white;
   border-bottom: 1px solid $color-sky-100;
+  position: sticky;
+  top: var(--sticky-header-h, 70px);
+  z-index: 99;
 
   &__inner {
     display: flex;
