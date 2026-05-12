@@ -99,8 +99,8 @@ function Dashboard() {
           {activeTab === 'Release Management' && data && (
             <ReleaseMgmt data={data} year={year} month={month} />
           )}
-          {activeTab === 'FED'     && <FED     month={monthLabel} year={year} />}
-          {activeTab === 'Catalog' && <Catalog month={monthLabel} year={year} />}
+          {activeTab === 'FED'     && <FED     components={components} />}
+          {activeTab === 'Catalog' && <Catalog components={components} />}
         </>
       )}
     </div>
