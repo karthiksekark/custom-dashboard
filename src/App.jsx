@@ -13,6 +13,7 @@ import ConfigModal from './components/ConfigModal/ConfigModal';
 import SettingsPanel from './components/SettingsPanel/SettingsPanel';
 import { useDateOptions } from './hooks/useDateOptions';
 import { useJiraData } from './hooks/useJiraData';
+import { useStickyOffsets } from './hooks/useStickyOffsets';
 import './styles/main.scss';
 import './App.scss';
 
@@ -59,6 +60,8 @@ function Dashboard() {
   const filteredTab = isFiltered ? (TEAM_NAMES[dashboardView] ?? tab) : tab;
   const activeTab   = isFiltered ? filteredTab : tab;
 
+  useStickyOffsets(isFiltered);
+
   function handleYearChange(newYear) {
     setYear(newYear);
     const available = months.filter(m => m.year === newYear);
@@ -97,7 +100,7 @@ function Dashboard() {
       {settingsOpen && <SettingsPanel />}
 
       {usingMock && (
-        <div className="app__mock-banner">
+        <div className="app__mock-banner app__mock-banner--sticky">
           <div className="app__mock-banner__inner">
             Demo mode — using mock data. Set <code>VITE_JIRA_BASE_URL</code> to connect to JIRA.
           </div>

@@ -6,6 +6,13 @@
     background: #fef9c3;
     border-bottom: 1px solid #fde047;
 
+    &--sticky {
+      position: sticky;
+      // sum of all bars above: header + control-bar + tabs (0 when tabs are hidden)
+      top: calc(var(--sticky-header-h, 70px) + var(--sticky-control-h, 55px) + var(--sticky-tabs-h, 0px));
+      z-index: 97;
+    }
+
     &__inner {
       max-width: $max-width;
       margin: 0 auto;

@@ -4,6 +4,9 @@
 .tabs {
   border-bottom: 1px solid $color-sky-200;
   background: $color-white;
+  position: sticky;
+  top: calc(var(--sticky-header-h, 70px) + var(--sticky-control-h, 55px));
+  z-index: 98;
 
   &__inner {
     display: flex;
