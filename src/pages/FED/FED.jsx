@@ -3,6 +3,7 @@ import { useTabData } from '../../hooks/useTabData';
 import CurrentDaySection from '../../components/CurrentDaySection/CurrentDaySection';
 import RootCauseSection from '../../components/RootCauseSection/RootCauseSection';
 import MonthlyMetricsSection from '../../components/MonthlyMetricsSection/MonthlyMetricsSection';
+import RootCausePrioritySection from '../../components/RootCausePrioritySection/RootCausePrioritySection';
 import { MOCK_TAB_FED } from '../../services/mockData';
 import './FED.scss';
 
@@ -30,13 +31,23 @@ export default function FED({ year, month, monthLabel, components }) {
       <CurrentDaySection data={data.currentDay} todayLabel={todayLabel} />
       <RootCauseSection
         rootCauses={FED_ROOT_CAUSES}
-        defectsByRC={data.rootCause.defects}
-        regressionByRC={data.rootCause.regression}
+        defectsByRC={data.rootCause.today.defects}
+        regressionByRC={data.rootCause.today.regression}
       />
       <MonthlyMetricsSection
         monthLabel={monthLabel}
         healthScore={data.monthly.healthScore}
         defectsByPriority={data.monthly.defectsByPriority}
+      />
+      <RootCausePrioritySection
+        title="Defects by Root Cause & Priority"
+        rootCauses={FED_ROOT_CAUSES}
+        data={data.rootCause.monthly.defects}
+      />
+      <RootCausePrioritySection
+        title="Regression Defects by Root Cause & Priority"
+        rootCauses={FED_ROOT_CAUSES}
+        data={data.rootCause.monthly.regression}
       />
     </div>
   );
