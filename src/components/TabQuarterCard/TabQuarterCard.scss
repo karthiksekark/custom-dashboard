@@ -1,0 +1,123 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+.tqc {
+  background: $color-white;
+  border: 1.5px solid color-mix(in srgb, var(--acc) 33%, transparent);
+  border-radius: $border-radius-card;
+  overflow: hidden;
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--acc) 8%, transparent);
+  transition: box-shadow 0.2s, transform 0.2s;
+
+  &--empty {
+    opacity: 0.5;
+    border-color: $color-sky-100;
+    box-shadow: none;
+  }
+
+  &--active {
+    border-width: 2px;
+    border-color: var(--acc);
+    box-shadow: 0 4px 20px color-mix(in srgb, var(--acc) 22%, transparent);
+
+    .tqc__header {
+      background: linear-gradient(90deg, color-mix(in srgb, var(--acc) 14%, transparent), transparent);
+    }
+
+    .tqc__title::after {
+      content: ' ◀';
+      font-size: 10px;
+      opacity: 0.6;
+      vertical-align: middle;
+    }
+  }
+
+  &__header {
+    @include flex-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid color-mix(in srgb, var(--acc) 20%, transparent);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--acc) 6%, transparent), transparent);
+
+    .tqc--empty & {
+      background: $color-sky-50;
+      border-bottom-color: $color-sky-100;
+    }
+  }
+
+  &__title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--acc);
+
+    .tqc--empty & { color: $color-text-muted; }
+  }
+
+  &__period {
+    font-size: 11px;
+    color: $color-text-muted;
+    margin-top: 1px;
+  }
+
+  &__badge {
+    background: color-mix(in srgb, var(--hc) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--hc) 25%, transparent);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--hc);
+
+    .tqc--empty & {
+      background: $color-sky-50;
+      border-color: $color-sky-200;
+      color: $color-text-muted;
+    }
+  }
+
+  &__row {
+    @include flex-between;
+    padding: 9px 14px;
+    border-bottom: 1px solid $color-sky-50;
+
+    &--alt { background: $color-bg-light; }
+    &:last-child { border-bottom: none; }
+  }
+
+  &__label {
+    font-size: 12px;
+    color: $color-text-muted;
+  }
+
+  &__val {
+    font-size: 13px;
+    color: $color-text-muted;
+
+    .tqc--empty & { color: $color-text-faint; }
+  }
+
+  &__health {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  &__bar {
+    width: 48px;
+    height: 4px;
+    border-radius: 2px;
+    background: $color-sky-100;
+    overflow: hidden;
+  }
+
+  &__fill {
+    height: 100%;
+    background: var(--hc);
+    border-radius: 2px;
+  }
+
+  &__health-val {
+    color: var(--hc);
+    font-weight: 700;
+    font-size: 12px;
+  }
+}
