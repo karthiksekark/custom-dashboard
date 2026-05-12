@@ -12,18 +12,43 @@ const WARNING_ICON = (
   </svg>
 );
 
+const TEAM_FIELDS = [
+  { key: 'release-management', label: 'Release Management' },
+  { key: 'fed',                label: 'FED' },
+  { key: 'catalog',            label: 'Catalog' },
+];
+
 export default function ConfigModal() {
   const { state, dispatch } = useAppContext();
-  const [value,  setValue]  = useState(state.preferences.components || '');
-  const [error,  setError]  = useState('');
+  const existing = state.preferences.teamComponents || {};
+
+  const [values, setValues] = useState({
+    'release-management': existing['release-management'] || '',
+    'fed':                existing['fed']                || '',
+    'catalog':            existing['catalog']            || '',
+  });
+  const [errors, setErrors] = useState({});
+
+  function handleChange(key, val) {
+    setValues(v  => ({ ...v,   [key]: val }));
+    setErrors(e  => ({ ...e,   [key]: ''  }));
+  }
 
   function handleSave() {
-    const trimmed = value.trim();
-    if (!trimmed) {
-      setError('Please enter at least one JIRA component name.');
-      return;
-    }
-    const updated = { ...state.preferences, components: trimmed };
+    const newErrors = {};
+    TEAM_FIELDS.forEach(({ key }) => {
+      if (!values[key].trim()) newErrors[key] = 'Required.';
+    });
+    if (Object.keys(newErrors).length) { setErrors(newErrors); return; }
+
+    const updated = {
+      ...state.preferences,
+      teamComponents: {
+        'release-management': values['release-management'].trim(),
+        'fed':                values['fed'].trim(),
+        'catalog':            values['catalog'].trim(),
+      },
+    };
     dispatch({ type: 'SET_PREFERENCES', payload: updated });
     persistPreferences(updated);
   }
@@ -37,30 +62,35 @@ export default function ConfigModal() {
     >
       <div className="modal-body">
         <p className="modal-body__text">
-          A <strong>JIRA Components</strong> filter is required before you
-          can access the dashboard. Enter the component names relevant to your
-          team — they will be applied to all JIRA queries.
+          Enter the JIRA component names for each team before accessing the
+          dashboard. These are applied as <code>AND component in (…)</code> to
+          every query.
         </p>
 
-        <div>
-          <label htmlFor="config-components" className="modal-body__label modal-body__label--required">
-            JIRA Components
-          </label>
-          <input
-            id="config-components"
-            type="text"
-            className={`modal-body__input${error ? ' modal-body__input--error' : ''}`}
-            placeholder="e.g. Payments, Auth, Core API"
-            value={value}
-            onChange={e => { setValue(e.target.value); setError(''); }}
-            onKeyDown={e => e.key === 'Enter' && handleSave()}
-            autoFocus
-          />
-          {error
-            ? <p className="modal-body__error">{error}</p>
-            : <p className="modal-body__hint">Comma-separated. Added as AND component in (…) to every query.</p>
-          }
-        </div>
+        {TEAM_FIELDS.map(({ key, label }, i) => (
+          <div key={key}>
+            <label
+              htmlFor={`config-${key}`}
+              className="modal-body__label modal-body__label--required"
+            >
+              {label} Components
+            </label>
+            <input
+              id={`config-${key}`}
+              type="text"
+              className={`modal-body__input${errors[key] ? ' modal-body__input--error' : ''}`}
+              placeholder="e.g. Payments, Auth, Core API"
+              value={values[key]}
+              onChange={e => handleChange(key, e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSave()}
+              autoFocus={i === 0}
+            />
+            {errors[key]
+              ? <p className="modal-body__error">{errors[key]}</p>
+              : <p className="modal-body__hint">Comma-separated component names.</p>
+            }
+          </div>
+        ))}
 
         <button className="btn btn--primary btn--full" onClick={handleSave}>
           Save &amp; Continue

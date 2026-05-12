@@ -1,10 +1,18 @@
 @use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
 
 .tabs {
   border-bottom: 1px solid $color-sky-200;
-  padding: 0 $gutter;
-  display: flex;
   background: $color-white;
+
+  &__inner {
+    display: flex;
+    max-width: $max-width;
+    margin: 0 auto;
+    padding: 0 $gutter;
+
+    @include respond-to(tablet) { padding: 0 $gutter-sm; }
+  }
 
   &__item {
     background: none;
@@ -19,9 +27,7 @@
     font-family: $font-stack;
     transition: color 0.15s, border-color 0.15s;
 
-    &:hover {
-      color: $color-primary;
-    }
+    &:hover { color: $color-primary; }
 
     &--active {
       border-bottom-color: $color-primary;

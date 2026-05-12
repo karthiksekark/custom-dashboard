@@ -3,6 +3,7 @@ import moment from 'moment-timezone';
 import { AppProvider } from './context/AppContext';
 import { useAppContext } from './hooks/useAppContext';
 import Header from './components/Header/Header';
+import ControlBar from './components/ControlBar/ControlBar';
 import Tabs from './components/Tabs/Tabs';
 import ReleaseMgmt from './pages/ReleaseMgmt/ReleaseMgmt';
 import FED from './pages/FED/FED';
@@ -31,7 +32,13 @@ function getDefaults() {
 function Dashboard() {
   const { state, dispatch } = useAppContext();
   const { isAuth, isConfigured, storageLoaded, preferences, settingsOpen } = state;
-  const { dashboardView, components } = preferences;
+  const { dashboardView, teamComponents } = preferences;
+
+  // Per-team component strings
+  const tc            = teamComponents || {};
+  const rmComponents  = tc['release-management'] || '';
+  const fedComponents = tc['fed']                || '';
+  const catComponents = tc['catalog']            || '';
 
   const defaults = getDefaults();
   const [tab,   setTab]   = useState('Release Management');
@@ -39,7 +46,8 @@ function Dashboard() {
   const [month, setMonth] = useState(defaults.month);
 
   const { months, years } = useDateOptions();
-  const { data, loading, usingMock } = useJiraData(year, month, components);
+  // ReleaseMgmt always uses its own team's components
+  const { data, loading, usingMock } = useJiraData(year, month, rmComponents);
 
   const monthLabel = months.find(m => m.value === month && m.year === year)?.label ?? month;
   const teamName   = TEAM_NAMES[dashboardView] ?? null;
@@ -69,14 +77,17 @@ function Dashboard() {
   return (
     <div className="app">
       <Header
+        onOpenSettings={() => dispatch({ type: 'TOGGLE_SETTINGS' })}
+        teamName={teamName}
+      />
+
+      <ControlBar
         year={year}
         month={month}
         years={years}
         months={months}
         onYearChange={handleYearChange}
         onMonthChange={setMonth}
-        onOpenSettings={() => dispatch({ type: 'TOGGLE_SETTINGS' })}
-        teamName={teamName}
       />
 
       {!isFiltered && <Tabs active={tab} onChange={setTab} />}
@@ -85,7 +96,9 @@ function Dashboard() {
 
       {usingMock && (
         <div className="app__mock-banner">
-          Demo mode — using mock data. Set <code>VITE_JIRA_BASE_URL</code> to connect to JIRA.
+          <div className="app__mock-banner__inner">
+            Demo mode — using mock data. Set <code>VITE_JIRA_BASE_URL</code> to connect to JIRA.
+          </div>
         </div>
       )}
 
@@ -99,8 +112,8 @@ function Dashboard() {
           {activeTab === 'Release Management' && data && (
             <ReleaseMgmt data={data} year={year} month={month} />
           )}
-          {activeTab === 'FED'     && <FED     year={year} month={month} monthLabel={monthLabel} components={components} />}
-          {activeTab === 'Catalog' && <Catalog year={year} month={month} monthLabel={monthLabel} components={components} />}
+          {activeTab === 'FED'     && <FED     year={year} month={month} monthLabel={monthLabel} components={fedComponents} />}
+          {activeTab === 'Catalog' && <Catalog year={year} month={month} monthLabel={monthLabel} components={catComponents} />}
         </>
       )}
     </div>

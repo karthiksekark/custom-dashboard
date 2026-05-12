@@ -1,0 +1,70 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+$select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%230284c7' d='M5 7L0 2h10z'/%3E%3C/svg%3E");
+
+.control-bar {
+  background: $color-white;
+  border-bottom: 1px solid $color-sky-100;
+
+  &__inner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: $max-width;
+    margin: 0 auto;
+    padding: 10px $gutter;
+
+    @include respond-to(tablet) { padding: 10px $gutter-sm; }
+
+    @include respond-to(mobile) {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  }
+
+  &__label {
+    font-size: 11px;
+    font-weight: 700;
+    color: $color-text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  &__selects {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  &__select {
+    background: $color-sky-50;
+    border: 1px solid $color-sky-200;
+    border-radius: $border-radius-btn;
+    color: $color-text-darkest;
+    padding: 7px 28px 7px 13px;
+    font-size: 13px;
+    font-family: $font-stack;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: $select-arrow;
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+
+    option {
+      background: $color-white;
+      color: $color-text-darkest;
+    }
+
+    &:hover  { border-color: $color-primary; }
+
+    &:focus {
+      border-color: $color-primary;
+      box-shadow: 0 0 0 2px rgba($color-primary, 0.15);
+    }
+  }
+}

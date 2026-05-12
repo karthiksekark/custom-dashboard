@@ -6,17 +6,19 @@ const TABS = ['Release Management', 'FED', 'Catalog'];
 export default function Tabs({ active, onChange }) {
   return (
     <nav className="tabs" role="tablist">
-      {TABS.map(tab => (
-        <button
-          key={tab}
-          role="tab"
-          aria-selected={active === tab}
-          className={`tabs__item${active === tab ? ' tabs__item--active' : ''}`}
-          onClick={() => onChange(tab)}
-        >
-          {tab}
-        </button>
-      ))}
+      <div className="tabs__inner">
+        {TABS.map(tab => (
+          <button
+            key={tab}
+            role="tab"
+            aria-selected={active === tab}
+            className={`tabs__item${active === tab ? ' tabs__item--active' : ''}`}
+            onClick={() => onChange(tab)}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
     </nav>
   );
 }

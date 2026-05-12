@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import PropTypes from 'prop-types';
 import Modal from '../Modal/Modal';
 import { useAppContext } from '../../hooks/useAppContext';
 import { persistPreferences } from '../../context/AppContext';
@@ -18,39 +17,65 @@ const VIEWS = [
     id:          'default',
     label:       'Default (All Tabs)',
     description: 'Show all tabs — Release Management, FED, and Catalog.',
+    teamKey:     null,
   },
   {
     id:          'release-management',
     label:       'Release Management',
     description: 'Show only the Release Management dashboard. Tabs are hidden.',
+    teamKey:     'release-management',
   },
   {
     id:          'fed',
     label:       'FED',
     description: 'Show only the FED dashboard. Tabs are hidden.',
+    teamKey:     'fed',
   },
   {
     id:          'catalog',
     label:       'Catalog',
     description: 'Show only the Catalog dashboard. Tabs are hidden.',
+    teamKey:     'catalog',
   },
 ];
 
 export default function SettingsPanel() {
   const { state, dispatch } = useAppContext();
   const { preferences }     = state;
+  const existing            = preferences.teamComponents || {};
 
-  const [components,    setComponents]    = useState(preferences.components    || '');
+  const [teamComponents, setTeamComponents] = useState({
+    'release-management': existing['release-management'] || '',
+    'fed':                existing['fed']                || '',
+    'catalog':            existing['catalog']            || '',
+  });
   const [dashboardView, setDashboardView] = useState(preferences.dashboardView || 'default');
-  const [compError,     setCompError]     = useState('');
+  const [errors,        setErrors]        = useState({});
   const [saved,         setSaved]         = useState(false);
 
   function handleClose() { dispatch({ type: 'CLOSE_SETTINGS' }); }
 
+  function handleCompChange(key, val) {
+    setTeamComponents(prev => ({ ...prev, [key]: val }));
+    setErrors(prev => ({ ...prev, [key]: '' }));
+    setSaved(false);
+  }
+
   function handleSave() {
-    const trimmed = components.trim();
-    if (!trimmed) { setCompError('Component names cannot be empty.'); return; }
-    const updated = { components: trimmed, dashboardView };
+    const newErrors = {};
+    ['release-management', 'fed', 'catalog'].forEach(key => {
+      if (!teamComponents[key].trim()) newErrors[key] = 'Required.';
+    });
+    if (Object.keys(newErrors).length) { setErrors(newErrors); return; }
+
+    const updated = {
+      dashboardView,
+      teamComponents: {
+        'release-management': teamComponents['release-management'].trim(),
+        'fed':                teamComponents['fed'].trim(),
+        'catalog':            teamComponents['catalog'].trim(),
+      },
+    };
     dispatch({ type: 'SET_PREFERENCES', payload: updated });
     persistPreferences(updated);
     setSaved(true);
@@ -58,12 +83,11 @@ export default function SettingsPanel() {
   }
 
   function handleReset() {
-    setComponents('');
+    setTeamComponents({ 'release-management': '', 'fed': '', 'catalog': '' });
     setDashboardView('default');
-    setCompError('');
+    setErrors({});
     dispatch({ type: 'RESET_PREFERENCES' });
     persistPreferences(DEFAULT_PREFERENCES);
-    // Resetting clears components → ConfigModal will block until re-configured
     handleClose();
   }
 
@@ -77,26 +101,7 @@ export default function SettingsPanel() {
     >
       <div className="modal-body settings-panel">
 
-        {/* ── Components field ── */}
-        <div>
-          <label htmlFor="sp-components" className="modal-body__label modal-body__label--required">
-            JIRA Components
-          </label>
-          <input
-            id="sp-components"
-            type="text"
-            className={`modal-body__input${compError ? ' modal-body__input--error' : ''}`}
-            placeholder="e.g. Payments, Auth, Core API"
-            value={components}
-            onChange={e => { setComponents(e.target.value); setCompError(''); setSaved(false); }}
-          />
-          {compError
-            ? <p className="modal-body__error">{compError}</p>
-            : <p className="modal-body__hint">Comma-separated. Applied as AND component in (…) to all JQL queries.</p>
-          }
-        </div>
-
-        {/* ── Dashboard view ── */}
+        {/* ── Dashboard View + per-team component fields ── */}
         <div>
           <span className="modal-body__label">Dashboard View</span>
           <div className="settings-panel__views">
@@ -113,9 +118,28 @@ export default function SettingsPanel() {
                   onChange={() => setDashboardView(v.id)}
                   className="settings-panel__radio"
                 />
-                <div>
+                <div className="settings-panel__view-body">
                   <div className="settings-panel__view-label">{v.label}</div>
                   <div className="settings-panel__view-desc">{v.description}</div>
+
+                  {v.teamKey && (
+                    <div
+                      className="settings-panel__comp-field"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <input
+                        type="text"
+                        className={`settings-panel__comp-input${errors[v.teamKey] ? ' settings-panel__comp-input--error' : ''}`}
+                        placeholder="e.g. Payments, Auth, Core API"
+                        value={teamComponents[v.teamKey]}
+                        onChange={e => handleCompChange(v.teamKey, e.target.value)}
+                      />
+                      {errors[v.teamKey]
+                        ? <span className="settings-panel__comp-error">{errors[v.teamKey]}</span>
+                        : <span className="settings-panel__comp-hint">Comma-separated component names</span>
+                      }
+                    </div>
+                  )}
                 </div>
               </label>
             ))}
@@ -138,5 +162,3 @@ export default function SettingsPanel() {
     </Modal>
   );
 }
-
-SettingsPanel.propTypes = {};
