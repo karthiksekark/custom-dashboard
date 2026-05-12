@@ -28,10 +28,12 @@ export async function checkSession() {
 }
 
 /**
- * Navigates the current tab to JIRA's login page and asks JIRA to redirect
- * back to the extension page after a successful login (Option B).
+ * Opens JIRA's login page in a new tab.
+ * We cannot use os_destination to redirect back to a chrome-extension:// URL —
+ * JIRA Server only accepts same-origin relative paths and prepends its own
+ * domain to any absolute URL, breaking the return link. Opening in a new tab
+ * keeps the extension page alive so the user can return to it after login.
  */
 export function redirectToJiraLogin() {
-  const returnUrl = globalThis.chrome?.runtime?.getURL?.('index.html') ?? window.location.href;
-  window.location.href = `${JIRA_BASE}/login.jsp?os_destination=${encodeURIComponent(returnUrl)}`;
+  window.open(`${JIRA_BASE}/login.jsp`, '_blank', 'noopener');
 }
