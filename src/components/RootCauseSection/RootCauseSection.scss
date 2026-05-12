@@ -1,0 +1,118 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+.rcs {
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+
+    @include respond-to(tablet) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__panel {
+    overflow: hidden;
+
+    &--right {
+      border-left: 1px solid $color-sky-100;
+
+      @include respond-to(tablet) {
+        border-left: none;
+        border-top: 1px solid $color-sky-100;
+      }
+    }
+  }
+
+  &__table-wrap {
+    padding: 0 20px 20px;
+    overflow-x: auto;
+  }
+
+  // ── Table ───────────────────────────────────────────────────────────────────
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+
+    thead th {
+      text-align: left;
+      font-weight: 700;
+      font-size: 12px;
+      color: $color-text-dark;
+      padding: 6px 8px 6px 0;
+      border-bottom: 2px solid $color-sky-200;
+      white-space: nowrap;
+
+      &:not(:first-child) { text-align: right; }
+    }
+
+    tbody tr {
+      &:nth-child(even) td { background: $color-bg-light; }
+
+      td {
+        padding: 6px 8px 6px 0;
+        color: $color-text-dark;
+        vertical-align: middle;
+
+        &:not(:first-child) { text-align: right; }
+      }
+    }
+
+    tfoot tr {
+      border-top: 2px solid $color-sky-200;
+
+      td {
+        padding: 7px 8px 7px 0;
+        font-weight: 700;
+        color: $color-text-darkest;
+
+        &:not(:first-child) { text-align: right; }
+      }
+    }
+  }
+
+  // ── Cell value styles ────────────────────────────────────────────────────────
+  &__count { color: $color-primary; font-weight: 500; }
+  &__dash  { color: $color-text-muted; }
+
+  // ── Root cause label + tooltip ───────────────────────────────────────────────
+  &__rc-label {
+    margin-right: 2px;
+  }
+
+  &__tooltip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+
+    &-icon {
+      font-size: 11px;
+      color: $color-text-muted;
+      cursor: default;
+      line-height: 1;
+    }
+
+    &-text {
+      position: absolute;
+      bottom: calc(100% + 4px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: $color-text-darkest;
+      color: $color-white;
+      font-size: 11px;
+      font-weight: 400;
+      padding: 4px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 20;
+    }
+
+    &:hover &-text { opacity: 1; }
+  }
+}
