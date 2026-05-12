@@ -66,21 +66,43 @@ export const MOCK_TAB_FED = {
     regression: [],
   },
   rootCause: {
-    defects: {
-      FED_Triaged:  { Critical: 0, High: 2, Medium: 1, Low: 0 },
-      FED_IMPL:     { Critical: 1, High: 3, Medium: 2, Low: 0 },
-      FED_NO_IMPL:  { Critical: 0, High: 0, Medium: 1, Low: 1 },
-      FED_REQ_GAP:  { Critical: 0, High: 1, Medium: 0, Low: 0 },
-      FED_PUB:      { Critical: 0, High: 0, Medium: 0, Low: 0 },
-      FED_CacheCLR: { Critical: 0, High: 0, Medium: 1, Low: 0 },
+    // Today's data — feeds existing side-by-side tables (RootCauseSection)
+    today: {
+      defects: {
+        FED_Triaged:  { Critical: 0, High: 0, Medium: 1, Low: 0 },
+        FED_IMPL:     { Critical: 0, High: 0, Medium: 0, Low: 2 },
+        FED_NO_IMPL:  { Critical: 0, High: 1, Medium: 0, Low: 0 },
+        FED_REQ_GAP:  { Critical: 0, High: 0, Medium: 0, Low: 0 },
+        FED_PUB:      { Critical: 0, High: 0, Medium: 1, Low: 0 },
+        FED_CacheCLR: { Critical: 0, High: 0, Medium: 0, Low: 0 },
+      },
+      regression: {
+        FED_Triaged:  { Critical: 0, High: 0, Medium: 0, Low: 0 },
+        FED_IMPL:     { Critical: 0, High: 1, Medium: 0, Low: 0 },
+        FED_NO_IMPL:  { Critical: 0, High: 0, Medium: 0, Low: 0 },
+        FED_REQ_GAP:  { Critical: 0, High: 0, Medium: 0, Low: 0 },
+        FED_PUB:      { Critical: 0, High: 0, Medium: 0, Low: 0 },
+        FED_CacheCLR: { Critical: 0, High: 0, Medium: 0, Low: 0 },
+      },
     },
-    regression: {
-      FED_Triaged:  { Critical: 0, High: 0, Medium: 0, Low: 0 },
-      FED_IMPL:     { Critical: 0, High: 1, Medium: 0, Low: 0 },
-      FED_NO_IMPL:  { Critical: 0, High: 0, Medium: 0, Low: 0 },
-      FED_REQ_GAP:  { Critical: 0, High: 0, Medium: 0, Low: 0 },
-      FED_PUB:      { Critical: 0, High: 0, Medium: 0, Low: 0 },
-      FED_CacheCLR: { Critical: 0, High: 0, Medium: 0, Low: 0 },
+    // Monthly data — feeds new pie+table+pie sections (RootCausePrioritySection)
+    monthly: {
+      defects: {
+        FED_Triaged:  { Critical: 0, High: 2, Medium: 1, Low: 0 },
+        FED_IMPL:     { Critical: 1, High: 3, Medium: 2, Low: 0 },
+        FED_NO_IMPL:  { Critical: 0, High: 0, Medium: 1, Low: 1 },
+        FED_REQ_GAP:  { Critical: 0, High: 1, Medium: 0, Low: 0 },
+        FED_PUB:      { Critical: 0, High: 0, Medium: 0, Low: 0 },
+        FED_CacheCLR: { Critical: 0, High: 0, Medium: 1, Low: 0 },
+      },
+      regression: {
+        FED_Triaged:  { Critical: 0, High: 2, Medium: 6, Low: 2 },
+        FED_IMPL:     { Critical: 0, High: 0, Medium: 2, Low: 0 },
+        FED_NO_IMPL:  { Critical: 0, High: 1, Medium: 2, Low: 0 },
+        FED_REQ_GAP:  { Critical: 0, High: 0, Medium: 0, Low: 0 },
+        FED_PUB:      { Critical: 0, High: 0, Medium: 0, Low: 0 },
+        FED_CacheCLR: { Critical: 0, High: 0, Medium: 0, Low: 0 },
+      },
     },
   },
   monthly: {
@@ -100,21 +122,41 @@ export const MOCK_TAB_CATALOG = {
     regression: [{ name: 'High', value: 2 }],
   },
   rootCause: {
-    defects: {
-      CAT_Triaged:  { Critical: 0, High: 1, Medium: 2, Low: 0 },
-      CAT_IMPL:     { Critical: 1, High: 2, Medium: 1, Low: 0 },
-      CAT_NO_IMPL:  { Critical: 0, High: 0, Medium: 1, Low: 0 },
-      CAT_REQ_GAP:  { Critical: 0, High: 1, Medium: 0, Low: 1 },
-      CAT_PUB:      { Critical: 0, High: 0, Medium: 0, Low: 0 },
-      CAT_CacheCLR: { Critical: 0, High: 0, Medium: 0, Low: 0 },
+    today: {
+      defects: {
+        CAT_Triaged:  { Critical: 0, High: 0, Medium: 1, Low: 0 },
+        CAT_IMPL:     { Critical: 0, High: 1, Medium: 0, Low: 0 },
+        CAT_NO_IMPL:  { Critical: 0, High: 0, Medium: 1, Low: 0 },
+        CAT_REQ_GAP:  { Critical: 0, High: 0, Medium: 0, Low: 0 },
+        CAT_PUB:      { Critical: 0, High: 0, Medium: 0, Low: 0 },
+        CAT_CacheCLR: { Critical: 0, High: 0, Medium: 0, Low: 0 },
+      },
+      regression: {
+        CAT_Triaged:  { Critical: 0, High: 0, Medium: 0, Low: 0 },
+        CAT_IMPL:     { Critical: 0, High: 1, Medium: 0, Low: 0 },
+        CAT_NO_IMPL:  { Critical: 0, High: 0, Medium: 0, Low: 0 },
+        CAT_REQ_GAP:  { Critical: 0, High: 0, Medium: 0, Low: 0 },
+        CAT_PUB:      { Critical: 0, High: 0, Medium: 0, Low: 0 },
+        CAT_CacheCLR: { Critical: 0, High: 0, Medium: 0, Low: 0 },
+      },
     },
-    regression: {
-      CAT_Triaged:  { Critical: 0, High: 0, Medium: 0, Low: 0 },
-      CAT_IMPL:     { Critical: 0, High: 1, Medium: 0, Low: 0 },
-      CAT_NO_IMPL:  { Critical: 0, High: 0, Medium: 0, Low: 0 },
-      CAT_REQ_GAP:  { Critical: 0, High: 0, Medium: 0, Low: 0 },
-      CAT_PUB:      { Critical: 0, High: 0, Medium: 0, Low: 0 },
-      CAT_CacheCLR: { Critical: 0, High: 0, Medium: 0, Low: 0 },
+    monthly: {
+      defects: {
+        CAT_Triaged:  { Critical: 0, High: 1, Medium: 2, Low: 0 },
+        CAT_IMPL:     { Critical: 1, High: 2, Medium: 1, Low: 0 },
+        CAT_NO_IMPL:  { Critical: 0, High: 0, Medium: 1, Low: 0 },
+        CAT_REQ_GAP:  { Critical: 0, High: 1, Medium: 0, Low: 1 },
+        CAT_PUB:      { Critical: 0, High: 0, Medium: 0, Low: 0 },
+        CAT_CacheCLR: { Critical: 0, High: 0, Medium: 0, Low: 0 },
+      },
+      regression: {
+        CAT_Triaged:  { Critical: 0, High: 1, Medium: 3, Low: 1 },
+        CAT_IMPL:     { Critical: 0, High: 0, Medium: 1, Low: 0 },
+        CAT_NO_IMPL:  { Critical: 0, High: 1, Medium: 1, Low: 0 },
+        CAT_REQ_GAP:  { Critical: 0, High: 0, Medium: 0, Low: 0 },
+        CAT_PUB:      { Critical: 0, High: 0, Medium: 0, Low: 0 },
+        CAT_CacheCLR: { Critical: 0, High: 0, Medium: 0, Low: 0 },
+      },
     },
   },
   monthly: {
