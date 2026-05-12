@@ -21,7 +21,7 @@ const CAT_ROOT_CAUSES = [
 ];
 const CAT_RC_LABELS = CAT_ROOT_CAUSES.map(rc => rc.label);
 
-export default function Catalog({ year, month, monthLabel, components }) {
+export default function Catalog({ year, month, monthLabel, components, isCurrentPeriod }) {
   const { data, loading, todayLabel } = useTabData({
     year, month, components,
     rcLabels: CAT_RC_LABELS,
@@ -32,12 +32,14 @@ export default function Catalog({ year, month, monthLabel, components }) {
 
   return (
     <div className="catalog-page">
-      <CurrentDaySection data={data.currentDay} todayLabel={todayLabel} />
-      <RootCauseSection
-        rootCauses={CAT_ROOT_CAUSES}
-        defectsByRC={data.rootCause.today.defects}
-        regressionByRC={data.rootCause.today.regression}
-      />
+      {isCurrentPeriod && <CurrentDaySection data={data.currentDay} todayLabel={todayLabel} />}
+      {isCurrentPeriod && (
+        <RootCauseSection
+          rootCauses={CAT_ROOT_CAUSES}
+          defectsByRC={data.rootCause.today.defects}
+          regressionByRC={data.rootCause.today.regression}
+        />
+      )}
       <MonthlyMetricsSection
         monthLabel={monthLabel}
         healthScore={data.monthly.healthScore}
@@ -68,8 +70,9 @@ export default function Catalog({ year, month, monthLabel, components }) {
 }
 
 Catalog.propTypes = {
-  year:       PropTypes.string.isRequired,
-  month:      PropTypes.string.isRequired,
-  monthLabel: PropTypes.string.isRequired,
-  components: PropTypes.string.isRequired,
+  year:             PropTypes.string.isRequired,
+  month:            PropTypes.string.isRequired,
+  monthLabel:       PropTypes.string.isRequired,
+  components:       PropTypes.string.isRequired,
+  isCurrentPeriod:  PropTypes.bool.isRequired,
 };

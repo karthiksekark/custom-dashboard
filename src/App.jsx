@@ -49,9 +49,11 @@ function Dashboard() {
   // ReleaseMgmt always uses its own team's components
   const { data, loading, usingMock } = useJiraData(year, month, rmComponents);
 
-  const monthLabel = months.find(m => m.value === month && m.year === year)?.label ?? month;
-  const teamName   = TEAM_NAMES[dashboardView] ?? null;
-  const isFiltered = dashboardView !== 'default';
+  const monthLabel      = months.find(m => m.value === month && m.year === year)?.label ?? month;
+  const teamName        = TEAM_NAMES[dashboardView] ?? null;
+  const isFiltered      = dashboardView !== 'default';
+  const nowEst          = moment().tz(EST);
+  const isCurrentPeriod = nowEst.format('YYYY') === year && nowEst.format('MM') === month;
 
   // Active tab for filtered view: map view id → tab name
   const filteredTab = isFiltered ? (TEAM_NAMES[dashboardView] ?? tab) : tab;
@@ -110,10 +112,10 @@ function Dashboard() {
       ) : (
         <>
           {activeTab === 'Release Management' && data && (
-            <ReleaseMgmt data={data} year={year} month={month} />
+            <ReleaseMgmt data={data} year={year} month={month} isCurrentPeriod={isCurrentPeriod} />
           )}
-          {activeTab === 'FED'     && <FED     year={year} month={month} monthLabel={monthLabel} components={fedComponents} />}
-          {activeTab === 'Catalog' && <Catalog year={year} month={month} monthLabel={monthLabel} components={catComponents} />}
+          {activeTab === 'FED'     && <FED     year={year} month={month} monthLabel={monthLabel} components={fedComponents} isCurrentPeriod={isCurrentPeriod} />}
+          {activeTab === 'Catalog' && <Catalog year={year} month={month} monthLabel={monthLabel} components={catComponents} isCurrentPeriod={isCurrentPeriod} />}
         </>
       )}
     </div>

@@ -21,7 +21,7 @@ const FED_ROOT_CAUSES = [
 ];
 const FED_RC_LABELS = FED_ROOT_CAUSES.map(rc => rc.label);
 
-export default function FED({ year, month, monthLabel, components }) {
+export default function FED({ year, month, monthLabel, components, isCurrentPeriod }) {
   const { data, loading, todayLabel } = useTabData({
     year, month, components,
     rcLabels: FED_RC_LABELS,
@@ -32,12 +32,14 @@ export default function FED({ year, month, monthLabel, components }) {
 
   return (
     <div className="fed-page">
-      <CurrentDaySection data={data.currentDay} todayLabel={todayLabel} />
-      <RootCauseSection
-        rootCauses={FED_ROOT_CAUSES}
-        defectsByRC={data.rootCause.today.defects}
-        regressionByRC={data.rootCause.today.regression}
-      />
+      {isCurrentPeriod && <CurrentDaySection data={data.currentDay} todayLabel={todayLabel} />}
+      {isCurrentPeriod && (
+        <RootCauseSection
+          rootCauses={FED_ROOT_CAUSES}
+          defectsByRC={data.rootCause.today.defects}
+          regressionByRC={data.rootCause.today.regression}
+        />
+      )}
       <MonthlyMetricsSection
         monthLabel={monthLabel}
         healthScore={data.monthly.healthScore}
@@ -68,8 +70,9 @@ export default function FED({ year, month, monthLabel, components }) {
 }
 
 FED.propTypes = {
-  year:       PropTypes.string.isRequired,
-  month:      PropTypes.string.isRequired,
-  monthLabel: PropTypes.string.isRequired,
-  components: PropTypes.string.isRequired,
+  year:             PropTypes.string.isRequired,
+  month:            PropTypes.string.isRequired,
+  monthLabel:       PropTypes.string.isRequired,
+  components:       PropTypes.string.isRequired,
+  isCurrentPeriod:  PropTypes.bool.isRequired,
 };
