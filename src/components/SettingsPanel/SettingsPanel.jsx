@@ -73,6 +73,7 @@ export default function SettingsPanel() {
       onClose={handleClose}
       title={<>{GEAR_ICON} Dashboard Settings</>}
       variant="default"
+      dismissLocked
     >
       <div className="modal-body settings-panel">
 
