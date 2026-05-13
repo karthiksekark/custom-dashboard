@@ -51,7 +51,7 @@ export default function PieChartPanel({ title, data, colors }) {
                   text:        label,
                   fillStyle:   dataset.backgroundColor[i],
                   strokeStyle: 'transparent',
-                  hidden:      false,
+                  hidden:      !chart.getDataVisibility(i),
                   index:       i,
                 }));
               },
