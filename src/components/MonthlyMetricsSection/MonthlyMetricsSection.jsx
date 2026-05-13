@@ -33,7 +33,7 @@ const PIE_OPTIONS = {
             text:        label,
             fillStyle:   ds.backgroundColor[i],
             strokeStyle: 'transparent',
-            hidden:      false,
+            hidden:      !chart.getDataVisibility(i),
             index:       i,
           }));
         },

@@ -41,7 +41,7 @@ function makePieOptions(legendTitle) {
               text:        label,
               fillStyle:   ds.backgroundColor[i],
               strokeStyle: 'transparent',
-              hidden:      false,
+              hidden:      !chart.getDataVisibility(i),
               index:       i,
             }));
           },
