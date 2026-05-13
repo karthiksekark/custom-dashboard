@@ -5,14 +5,27 @@ import * as api from '../services/jiraApi';
 const JIRA_CONFIGURED = !!import.meta.env.VITE_JIRA_BASE_URL;
 const EST             = 'America/New_York';
 
+function createEmptyData(rcLabels) {
+  const emptyRC = Object.fromEntries((rcLabels || []).map(l => [l, { Critical: 0, High: 0, Medium: 0, Low: 0 }]));
+  return {
+    currentDay: { impl: [], defects: [], regression: [] },
+    rootCause: {
+      today:   { defects: { ...emptyRC }, regression: { ...emptyRC } },
+      monthly: { defects: { ...emptyRC }, regression: { ...emptyRC } },
+    },
+    monthly: { healthScore: null, defectsByPriority: [] },
+    dailyMetrics: { rows: [], totals: { t: 0, d: 0, c: 0, h: 0, m: 0, l: 0, rg: 0, fp: 0, dp: 0, hs: null } },
+    quarters: [],
+  };
+}
+
 export function useTabData({ year, month, components, rcLabels, mockData }) {
-  const [data,      setData]      = useState(null);
+  const [data,      setData]      = useState(() => createEmptyData(rcLabels));
   const [loading,   setLoading]   = useState(true);
   const [usingMock, setUsingMock] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setData(null);
 
     if (!JIRA_CONFIGURED) {
       setData(mockData);
@@ -70,3 +83,4 @@ export function useTabData({ year, month, components, rcLabels, mockData }) {
     todayLabel: moment().tz(EST).format('M/D/YYYY'),
   };
 }
+

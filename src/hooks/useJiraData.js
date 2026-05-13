@@ -43,7 +43,7 @@ export function useJiraData(year, month, components) {
         api.fetchDefectsByStatus(year, month, components),
         api.fetchDailyMetrics(year, month, components),
         api.fetchHealthScore(year, month, components),
-        api.fetchImplTickets(components),
+        api.fetchImplTickets(),
       ]);
 
       setData({

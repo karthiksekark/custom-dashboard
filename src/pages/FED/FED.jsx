@@ -28,10 +28,8 @@ export default function FED({ year, month, monthLabel, components, isCurrentPeri
     mockData:  MOCK_TAB_FED,
   });
 
-  if (loading || !data) return null;
-
   return (
-    <div className="fed-page">
+    <div className={`fed-page${loading ? ' fed-page--loading' : ''}`}>
       {isCurrentPeriod && <CurrentDaySection data={data.currentDay} todayLabel={todayLabel} />}
       {isCurrentPeriod && (
         <RootCauseSection

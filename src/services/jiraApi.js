@@ -368,9 +368,9 @@ export async function fetchTabQuarters(year, components) {
   });
 }
 
-export async function fetchImplTickets(components) {
+export async function fetchImplTickets() {
   const today = moment().tz(EST).format('YYYY-MM-DD');
-  const jql   = `created = "${today}"${compClause(components)} ORDER BY assignee ASC`;
+  const jql   = `project = DOPMO AND status not in (Cancelled, "On Hold", Open) AND due = "${today}" AND (component in ("DIGOPS/UAT", "DIGOPS/OPUAT", "DIGOPS/CR_UAT") OR summary ~ "BZ VAL" OR summary ~ "BIZ VAL" OR summary ~ "BUSVAL" OR labels in ("bizval")) AND (labels not in ("Lower-Env", Lower_Env) AND labels is not EMPTY) AND issuetype not in (Task) ORDER BY created DESC`;
   const data  = await jqlSearch(jql);
 
   const byTeam = {};
@@ -378,10 +378,10 @@ export async function fetchImplTickets(components) {
     const team   = issue.fields.assignee?.displayName || 'Unassigned';
     if (!byTeam[team]) byTeam[team] = { team, UAT: 0, OPUAT: 0, CR_UAT: 0, BIZ_VAL: 0, Total: 0 };
     const labels = issue.fields.labels || [];
-    if (labels.includes('UAT'))     byTeam[team].UAT     += 1;
-    if (labels.includes('OPUAT'))   byTeam[team].OPUAT   += 1;
-    if (labels.includes('CR_UAT'))  byTeam[team].CR_UAT  += 1;
-    if (labels.includes('BIZ_VAL')) byTeam[team].BIZ_VAL += 1;
+    if (labels.includes('UAT'))                               byTeam[team].UAT     += 1;
+    if (labels.includes('OPUAT'))                             byTeam[team].OPUAT   += 1;
+    if (labels.includes('CR_UAT'))                            byTeam[team].CR_UAT  += 1;
+    if (labels.includes('BIZ_VAL') || labels.includes('bizval')) byTeam[team].BIZ_VAL += 1;
     byTeam[team].Total += 1;
   });
 
