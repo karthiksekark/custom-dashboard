@@ -12,6 +12,22 @@
   @include respond-to(tablet) { padding: 16px $gutter-sm; }
   @include respond-to(mobile) { padding: 12px 10px; gap: 10px; }
 
+  &--loading {
+    opacity: 0.6;
+    pointer-events: none;
+    transition: opacity 0.2s;
+
+    &::before {
+      content: '';
+      display: block;
+      height: 3px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, transparent 0%, $color-primary 50%, transparent 100%);
+      background-size: 200% 100%;
+      animation: page-loading-sweep 1.2s ease-in-out infinite;
+    }
+  }
+
   // ── Top grid: Health | Implementation ──────────────────────────────────────
   &__top-grid {
     display: grid;

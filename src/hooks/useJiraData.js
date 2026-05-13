@@ -21,14 +21,26 @@ function buildTotals(rows) {
   return { t, d, c, h, m, l, hs };
 }
 
+function createEmptyRMData() {
+  return {
+    defectsByPriority: [],
+    defectsByStatus:   [],
+    releaseRows:       [],
+    totals:            { t: 0, d: 0, c: 0, h: 0, m: 0, l: 0, hs: null },
+    healthScore:       null,
+    implTickets:       [],
+    defectsTable:      [],
+    quarters:          [],
+  };
+}
+
 export function useJiraData(year, month, components) {
-  const [data,      setData]      = useState(null);
+  const [data,      setData]      = useState(createEmptyRMData);
   const [loading,   setLoading]   = useState(true);
   const [usingMock, setUsingMock] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setData(null);
 
     if (!JIRA_CONFIGURED) {
       setData(getMockData());
@@ -68,7 +80,7 @@ export function useJiraData(year, month, components) {
 
   useEffect(() => { load(); }, [load]);
 
-  return { data, loading, usingMock, reload: load };
+  return { data, loading, usingMock };
 }
 
 function getMockData() {
@@ -84,3 +96,4 @@ function getMockData() {
     todayLabel:        MOCK_TODAY_LABEL,
   };
 }
+
