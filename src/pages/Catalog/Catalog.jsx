@@ -28,10 +28,8 @@ export default function Catalog({ year, month, monthLabel, components, isCurrent
     mockData:  MOCK_TAB_CATALOG,
   });
 
-  if (loading || !data) return null;
-
   return (
-    <div className="catalog-page">
+    <div className={`catalog-page${loading ? ' catalog-page--loading' : ''}`}>
       {isCurrentPeriod && <CurrentDaySection data={data.currentDay} todayLabel={todayLabel} />}
       {isCurrentPeriod && (
         <RootCauseSection

@@ -9,3 +9,8 @@
   color: $color-text-darkest;
   padding-bottom: 60px;
 }
+
+@keyframes page-loading-sweep {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
