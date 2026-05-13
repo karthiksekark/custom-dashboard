@@ -9,6 +9,7 @@ import DefectsAlertTable from '../../components/Tables/DefectsAlertTable';
 import DailyMetricsTable from '../../components/Tables/DailyMetricsTable';
 import QuarterCard from '../../components/QuarterCard/QuarterCard';
 import { healthColor } from '../../services/healthUtils';
+import { useJiraData } from '../../hooks/useJiraData';
 import './ReleaseMgmt.scss';
 
 const EST = 'America/New_York';
@@ -25,7 +26,9 @@ function quarterDateRange(yearStr, qIndex) {
   return { startDate: start, endDate: end };
 }
 
-export default function ReleaseMgmt({ data, year, month, isCurrentPeriod }) {
+export default function ReleaseMgmt({ components, year, month, isCurrentPeriod }) {
+  const { data, loading } = useJiraData(year, month, components);
+
   // ── Derived date values (all EST) ──────────────────────────────────────────
   const todayMoment  = moment().tz(EST);
   const todayLabel   = todayMoment.format('M/D/YYYY');
@@ -46,7 +49,7 @@ export default function ReleaseMgmt({ data, year, month, isCurrentPeriod }) {
   const hc = healthColor(data.healthScore);
 
   return (
-    <div className="release-mgmt">
+    <div className={`release-mgmt${loading ? ' release-mgmt--loading' : ''}`}>
 
       {/* ── Row 1: Health gauge + (current period only) Implementation table ── */}
       {isCurrentPeriod ? (
@@ -125,8 +128,8 @@ export default function ReleaseMgmt({ data, year, month, isCurrentPeriod }) {
 }
 
 ReleaseMgmt.propTypes = {
-  data:             PropTypes.object.isRequired,
-  year:             PropTypes.string.isRequired,
-  month:            PropTypes.string.isRequired,
-  isCurrentPeriod:  PropTypes.bool.isRequired,
+  components:      PropTypes.string.isRequired,
+  year:            PropTypes.string.isRequired,
+  month:           PropTypes.string.isRequired,
+  isCurrentPeriod: PropTypes.bool.isRequired,
 };

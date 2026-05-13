@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import moment from 'moment-timezone';
 import { AppProvider } from './context/AppContext';
 import { useAppContext } from './hooks/useAppContext';
@@ -12,7 +12,6 @@ import AuthModal from './components/AuthModal/AuthModal';
 import ConfigModal from './components/ConfigModal/ConfigModal';
 import SettingsPanel from './components/SettingsPanel/SettingsPanel';
 import { useDateOptions } from './hooks/useDateOptions';
-import { useJiraData } from './hooks/useJiraData';
 import { useStickyOffsets } from './hooks/useStickyOffsets';
 import './styles/main.scss';
 import './App.scss';
@@ -47,32 +46,19 @@ function Dashboard() {
   const [month, setMonth] = useState(defaults.month);
 
   const { months, years } = useDateOptions();
-  // ReleaseMgmt always uses its own team's components
-  const { data, loading, usingMock, reload } = useJiraData(year, month, rmComponents);
 
   const monthLabel      = months.find(m => m.value === month && m.year === year)?.label ?? month;
   const teamName        = TEAM_NAMES[dashboardView] ?? null;
   const isFiltered      = dashboardView !== 'default';
   const nowEst          = moment().tz(EST);
   const isCurrentPeriod = nowEst.format('YYYY') === year && nowEst.format('MM') === month;
+  const usingMock       = !import.meta.env.VITE_JIRA_BASE_URL;
 
   // Active tab for filtered view: map view id → tab name
   const filteredTab = isFiltered ? (TEAM_NAMES[dashboardView] ?? tab) : tab;
   const activeTab   = isFiltered ? filteredTab : tab;
 
   useStickyOffsets(isFiltered);
-
-  // Re-fetch RM data whenever the tab switches TO Release Management.
-  // FED/Catalog re-fetch automatically because they unmount/remount on each
-  // tab switch; useJiraData lives in Dashboard (never unmounts) so without
-  // this effect the RM tab would always show stale data on return.
-  const prevTabRef = useRef(null);
-  useEffect(() => {
-    if (prevTabRef.current !== null && activeTab === 'Release Management') {
-      reload();
-    }
-    prevTabRef.current = activeTab;
-  }, [activeTab]); // reload is stable (useCallback); omitting avoids initial double-fetch
 
   function handleYearChange(newYear) {
     setYear(newYear);
@@ -119,20 +105,13 @@ function Dashboard() {
         </div>
       )}
 
-      {loading ? (
-        <div className="app__loader">
-          <div className="app__spinner" />
-          <span>Loading data…</span>
-        </div>
-      ) : (
-        <>
-          {activeTab === 'Release Management' && data && (
-            <ReleaseMgmt data={data} year={year} month={month} isCurrentPeriod={isCurrentPeriod} />
-          )}
-          {activeTab === 'FED'     && <FED     year={year} month={month} monthLabel={monthLabel} components={fedComponents} isCurrentPeriod={isCurrentPeriod} />}
-          {activeTab === 'Catalog' && <Catalog year={year} month={month} monthLabel={monthLabel} components={catComponents} isCurrentPeriod={isCurrentPeriod} />}
-        </>
-      )}
+      <>
+        {activeTab === 'Release Management' && (
+          <ReleaseMgmt components={rmComponents} year={year} month={month} isCurrentPeriod={isCurrentPeriod} />
+        )}
+        {activeTab === 'FED'     && <FED     year={year} month={month} monthLabel={monthLabel} components={fedComponents} isCurrentPeriod={isCurrentPeriod} />}
+        {activeTab === 'Catalog' && <Catalog year={year} month={month} monthLabel={monthLabel} components={catComponents} isCurrentPeriod={isCurrentPeriod} />}
+      </>
     </div>
   );
 }
