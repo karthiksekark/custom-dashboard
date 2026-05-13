@@ -1,13 +1,13 @@
 import { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Chart, PieController, ArcElement, Tooltip, Legend } from 'chart.js';
 import Card from '../Card/Card';
 import SectionHeader from '../SectionHeader/SectionHeader';
 import DoughnutGauge from '../Charts/DoughnutGauge';
 import { healthColor } from '../../services/healthUtils';
 import './MonthlyMetricsSection.scss';
 
-Chart.register(ArcElement, Tooltip, Legend);
+Chart.register(PieController, ArcElement, Tooltip, Legend);
 
 const PRIORITY_COLORS = ['#dc2626', '#ea580c', '#ca8a04', '#0284c7'];
 const PRIORITIES      = ['Critical', 'High', 'Medium', 'Low'];
