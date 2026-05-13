@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import moment from 'moment-timezone';
 import { AppProvider } from './context/AppContext';
 import { useAppContext } from './hooks/useAppContext';
@@ -48,7 +48,7 @@ function Dashboard() {
 
   const { months, years } = useDateOptions();
   // ReleaseMgmt always uses its own team's components
-  const { data, loading, usingMock } = useJiraData(year, month, rmComponents);
+  const { data, loading, usingMock, reload } = useJiraData(year, month, rmComponents);
 
   const monthLabel      = months.find(m => m.value === month && m.year === year)?.label ?? month;
   const teamName        = TEAM_NAMES[dashboardView] ?? null;
@@ -61,6 +61,18 @@ function Dashboard() {
   const activeTab   = isFiltered ? filteredTab : tab;
 
   useStickyOffsets(isFiltered);
+
+  // Re-fetch RM data whenever the tab switches TO Release Management.
+  // FED/Catalog re-fetch automatically because they unmount/remount on each
+  // tab switch; useJiraData lives in Dashboard (never unmounts) so without
+  // this effect the RM tab would always show stale data on return.
+  const prevTabRef = useRef(null);
+  useEffect(() => {
+    if (prevTabRef.current !== null && activeTab === 'Release Management') {
+      reload();
+    }
+    prevTabRef.current = activeTab;
+  }, [activeTab]); // reload is stable (useCallback); omitting avoids initial double-fetch
 
   function handleYearChange(newYear) {
     setYear(newYear);
