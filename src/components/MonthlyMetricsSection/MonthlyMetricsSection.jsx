@@ -1,14 +1,13 @@
-import { useMemo } from 'react';
+import { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import { Pie } from 'react-chartjs-2';
+import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
 import Card from '../Card/Card';
 import SectionHeader from '../SectionHeader/SectionHeader';
 import DoughnutGauge from '../Charts/DoughnutGauge';
 import { healthColor } from '../../services/healthUtils';
 import './MonthlyMetricsSection.scss';
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+Chart.register(ArcElement, Tooltip, Legend);
 
 const PRIORITY_COLORS = ['#dc2626', '#ea580c', '#ca8a04', '#0284c7'];
 const PRIORITIES      = ['Critical', 'High', 'Medium', 'Low'];
@@ -68,18 +67,40 @@ function InfoTooltip({ text }) {
 }
 
 function PriorityPie({ data }) {
-  const chartData = useMemo(() => ({
-    labels:   data.map(d => d.name),
-    datasets: [{
-      data:            data.map(d => d.value),
-      backgroundColor: PRIORITY_COLORS,
-      borderWidth:     2,
-      borderColor:     '#fff',
-      hoverOffset:     6,
-    }],
-  }), [data]);
+  const canvasRef = useRef(null);
+  const chartRef  = useRef(null);
 
-  return <Pie data={chartData} options={PIE_OPTIONS} />;
+  useEffect(() => {
+    if (!canvasRef.current) return;
+
+    chartRef.current?.destroy();
+
+    chartRef.current = new Chart(canvasRef.current, {
+      type: 'pie',
+      data: {
+        labels:   data.map(d => d.name),
+        datasets: [{
+          data:            data.map(d => d.value),
+          backgroundColor: PRIORITY_COLORS,
+          borderWidth:     2,
+          borderColor:     '#fff',
+          hoverOffset:     6,
+        }],
+      },
+      options: PIE_OPTIONS,
+    });
+
+    return () => {
+      chartRef.current?.destroy();
+      chartRef.current = null;
+    };
+  }, [data]);
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <canvas ref={canvasRef} />
+    </div>
+  );
 }
 
 export default function MonthlyMetricsSection({ monthLabel, healthScore, defectsByPriority }) {

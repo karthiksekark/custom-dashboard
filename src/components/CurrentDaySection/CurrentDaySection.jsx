@@ -1,12 +1,11 @@
 import PropTypes from 'prop-types';
-import { useMemo } from 'react';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import { Pie } from 'react-chartjs-2';
+import { useRef, useEffect } from 'react';
+import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
 import Card from '../Card/Card';
 import SectionHeader from '../SectionHeader/SectionHeader';
 import './CurrentDaySection.scss';
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+Chart.register(ArcElement, Tooltip, Legend);
 
 const IMPL_COLORS     = ['#0284c7', '#7c3aed', '#ca8a04', '#16a34a'];
 const PRIORITY_COLORS = ['#dc2626', '#ea580c', '#ca8a04', '#0284c7'];
@@ -61,18 +60,40 @@ const PIE_OPTIONS = {
 };
 
 function InlinePie({ data, colors }) {
-  const chartData = useMemo(() => ({
-    labels:   data.map(d => d.name),
-    datasets: [{
-      data:            data.map(d => d.value),
-      backgroundColor: colors,
-      borderWidth:     2,
-      borderColor:     '#fff',
-      hoverOffset:     6,
-    }],
-  }), [data, colors]);
+  const canvasRef = useRef(null);
+  const chartRef  = useRef(null);
 
-  return <Pie data={chartData} options={PIE_OPTIONS} />;
+  useEffect(() => {
+    if (!canvasRef.current) return;
+
+    chartRef.current?.destroy();
+
+    chartRef.current = new Chart(canvasRef.current, {
+      type: 'pie',
+      data: {
+        labels:   data.map(d => d.name),
+        datasets: [{
+          data:            data.map(d => d.value),
+          backgroundColor: colors,
+          borderWidth:     2,
+          borderColor:     '#fff',
+          hoverOffset:     6,
+        }],
+      },
+      options: PIE_OPTIONS,
+    });
+
+    return () => {
+      chartRef.current?.destroy();
+      chartRef.current = null;
+    };
+  }, [data, colors]);
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <canvas ref={canvasRef} />
+    </div>
+  );
 }
 
 function ImplPanel({ data }) {

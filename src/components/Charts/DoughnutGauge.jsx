@@ -1,17 +1,17 @@
-import { useMemo } from 'react';
+import { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Chart as ChartJS, ArcElement, Tooltip } from 'chart.js';
-import { Doughnut } from 'react-chartjs-2';
+import { Chart, ArcElement, Tooltip } from 'chart.js';
 import { healthColor } from '../../services/healthUtils';
 import './Charts.scss';
 
-ChartJS.register(ArcElement, Tooltip);
+Chart.register(ArcElement, Tooltip);
 
-// Centre-text plugin (registered locally so it doesn't bleed to other charts)
 const centerTextPlugin = {
   id: 'centerText',
   afterDraw(chart) {
-    const { ctx, chartArea: { width, height, left, top } } = chart;
+    const { ctx, chartArea } = chart;
+    if (!chartArea) return;
+    const { width, height, left, top } = chartArea;
     const score = chart.config.options.plugins.centerText?.score;
     if (score == null) return;
 
@@ -36,32 +36,57 @@ const centerTextPlugin = {
 };
 
 export default function DoughnutGauge({ score }) {
-  const color = healthColor(score);
+  const canvasRef = useRef(null);
+  const chartRef  = useRef(null);
 
-  const chartData = useMemo(() => ({
-    datasets: [{
-      data:            [score ?? 0, 100 - (score ?? 0)],
-      backgroundColor: [color, '#e0f2fe'],
-      borderWidth:     0,
-    }],
-  }), [score, color]);
+  useEffect(() => {
+    if (score == null || !canvasRef.current) return;
 
-  const options = useMemo(() => ({
-    responsive: true,
-    maintainAspectRatio: true,
-    cutout: '75%',
-    rotation: -90,
-    circumference: 360,
-    plugins: {
-      legend:     { display: false },
-      tooltip:    { enabled: false },
-      centerText: { score },
-    },
-  }), [score]);
+    const color = healthColor(score);
+
+    chartRef.current?.destroy();
+
+    chartRef.current = new Chart(canvasRef.current, {
+      type: 'doughnut',
+      data: {
+        datasets: [{
+          data:            [score, 100 - score],
+          backgroundColor: [color, '#e0f2fe'],
+          borderWidth:     0,
+        }],
+      },
+      options: {
+        responsive:          true,
+        maintainAspectRatio: true,
+        cutout:              '75%',
+        rotation:            -90,
+        circumference:       360,
+        plugins: {
+          legend:     { display: false },
+          tooltip:    { enabled: false },
+          centerText: { score },
+        },
+      },
+      plugins: [centerTextPlugin],
+    });
+
+    return () => {
+      chartRef.current?.destroy();
+      chartRef.current = null;
+    };
+  }, [score]);
+
+  if (score == null) {
+    return (
+      <div className="gauge gauge--empty">
+        <span className="gauge__empty">No data to display</span>
+      </div>
+    );
+  }
 
   return (
     <div className="gauge">
-      <Doughnut data={chartData} options={options} plugins={[centerTextPlugin]} />
+      <canvas ref={canvasRef} />
     </div>
   );
 }

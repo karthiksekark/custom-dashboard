@@ -1,12 +1,11 @@
-import { useMemo } from 'react';
+import { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import { Pie } from 'react-chartjs-2';
+import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
 import Card from '../Card/Card';
 import SectionHeader from '../SectionHeader/SectionHeader';
 import './RootCausePrioritySection.scss';
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+Chart.register(ArcElement, Tooltip, Legend);
 
 // 6 distinguishable sky-blue-theme colors — one per root cause slot
 const RC_COLORS       = ['#0284c7', '#0ea5e9', '#ca8a04', '#16a34a', '#7c3aed', '#38bdf8'];
@@ -71,18 +70,40 @@ const RC_PIE_OPTIONS       = makePieOptions('Filter by');
 const PRIORITY_PIE_OPTIONS = makePieOptions('Filter by');
 
 function InlinePie({ labels, values, colors, options }) {
-  const chartData = useMemo(() => ({
-    labels,
-    datasets: [{
-      data:            values,
-      backgroundColor: colors,
-      borderWidth:     2,
-      borderColor:     '#fff',
-      hoverOffset:     6,
-    }],
-  }), [labels, values, colors]);
+  const canvasRef = useRef(null);
+  const chartRef  = useRef(null);
 
-  return <Pie data={chartData} options={options} />;
+  useEffect(() => {
+    if (!canvasRef.current) return;
+
+    chartRef.current?.destroy();
+
+    chartRef.current = new Chart(canvasRef.current, {
+      type: 'pie',
+      data: {
+        labels,
+        datasets: [{
+          data:            values,
+          backgroundColor: colors,
+          borderWidth:     2,
+          borderColor:     '#fff',
+          hoverOffset:     6,
+        }],
+      },
+      options,
+    });
+
+    return () => {
+      chartRef.current?.destroy();
+      chartRef.current = null;
+    };
+  }, [labels, values, colors, options]);
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <canvas ref={canvasRef} />
+    </div>
+  );
 }
 
 function InfoTooltip({ text }) {
