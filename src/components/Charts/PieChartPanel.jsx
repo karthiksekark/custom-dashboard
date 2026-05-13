@@ -1,9 +1,9 @@
 import { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Chart, PieController, ArcElement, Tooltip, Legend } from 'chart.js';
 import './Charts.scss';
 
-Chart.register(ArcElement, Tooltip, Legend);
+Chart.register(PieController, ArcElement, Tooltip, Legend);
 
 export default function PieChartPanel({ title, data, colors }) {
   const canvasRef = useRef(null);

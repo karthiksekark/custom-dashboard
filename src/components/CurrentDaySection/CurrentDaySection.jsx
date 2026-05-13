@@ -1,11 +1,11 @@
 import PropTypes from 'prop-types';
 import { useRef, useEffect } from 'react';
-import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Chart, PieController, ArcElement, Tooltip, Legend } from 'chart.js';
 import Card from '../Card/Card';
 import SectionHeader from '../SectionHeader/SectionHeader';
 import './CurrentDaySection.scss';
 
-Chart.register(ArcElement, Tooltip, Legend);
+Chart.register(PieController, ArcElement, Tooltip, Legend);
 
 const IMPL_COLORS     = ['#0284c7', '#7c3aed', '#ca8a04', '#16a34a'];
 const PRIORITY_COLORS = ['#dc2626', '#ea580c', '#ca8a04', '#0284c7'];

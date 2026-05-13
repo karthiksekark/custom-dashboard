@@ -1,11 +1,11 @@
 import { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Chart, PieController, ArcElement, Tooltip, Legend } from 'chart.js';
 import Card from '../Card/Card';
 import SectionHeader from '../SectionHeader/SectionHeader';
 import './RootCausePrioritySection.scss';
 
-Chart.register(ArcElement, Tooltip, Legend);
+Chart.register(PieController, ArcElement, Tooltip, Legend);
 
 // 6 distinguishable sky-blue-theme colors — one per root cause slot
 const RC_COLORS       = ['#0284c7', '#0ea5e9', '#ca8a04', '#16a34a', '#7c3aed', '#38bdf8'];

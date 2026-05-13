@@ -1,10 +1,10 @@
 import { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Chart, ArcElement, Tooltip } from 'chart.js';
+import { Chart, DoughnutController, ArcElement, Tooltip } from 'chart.js';
 import { healthColor } from '../../services/healthUtils';
 import './Charts.scss';
 
-Chart.register(ArcElement, Tooltip);
+Chart.register(DoughnutController, ArcElement, Tooltip);
 
 const centerTextPlugin = {
   id: 'centerText',
