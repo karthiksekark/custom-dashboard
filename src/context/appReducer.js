@@ -3,9 +3,9 @@ const TEAM_KEYS = ['release-management', 'fed', 'catalog'];
 export const DEFAULT_PREFERENCES = {
   dashboardView:  'default',
   teamComponents: {
-    'release-management': '',
-    'fed':                '',
-    'catalog':            '',
+    'release-management': 'DIGOPS/UAT',
+    'fed':                'DIGOPS/FED',
+    'catalog':            'DIGOPS/Catalog',
   },
 };
 
@@ -41,7 +41,10 @@ export function appReducer(state, action) {
   switch (action.type) {
 
     case 'STORAGE_LOADED': {
-      const prefs = migrateLegacy(action.payload);
+      const prefs = {
+        ...migrateLegacy(action.payload),
+        teamComponents: DEFAULT_PREFERENCES.teamComponents,
+      };
       return {
         ...state,
         storageLoaded: true,
