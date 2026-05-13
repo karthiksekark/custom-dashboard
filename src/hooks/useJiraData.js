@@ -68,7 +68,7 @@ export function useJiraData(year, month, components) {
 
   useEffect(() => { load(); }, [load]);
 
-  return { data, loading, usingMock };
+  return { data, loading, usingMock, reload: load };
 }
 
 function getMockData() {
