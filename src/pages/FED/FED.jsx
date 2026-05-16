@@ -21,11 +21,12 @@ const FED_ROOT_CAUSES = [
 ];
 const FED_RC_LABELS = FED_ROOT_CAUSES.map(rc => rc.label);
 
-export default function FED({ year, month, monthLabel, components, isCurrentPeriod }) {
+export default function FED({ year, month, monthLabel, components, isCurrentPeriod, dashboardView, activeTab, isFiltered }) {
   const { data, loading, todayLabel } = useTabData({
     year, month, components,
     rcLabels: FED_RC_LABELS,
     mockData:  MOCK_TAB_FED,
+    dashboardView, activeTab, isFiltered,
   });
 
   return (
@@ -73,4 +74,7 @@ FED.propTypes = {
   monthLabel:       PropTypes.string.isRequired,
   components:       PropTypes.string.isRequired,
   isCurrentPeriod:  PropTypes.bool.isRequired,
+  dashboardView:    PropTypes.string.isRequired,
+  activeTab:        PropTypes.string.isRequired,
+  isFiltered:       PropTypes.bool.isRequired,
 };

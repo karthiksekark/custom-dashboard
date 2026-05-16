@@ -21,11 +21,12 @@ const CAT_ROOT_CAUSES = [
 ];
 const CAT_RC_LABELS = CAT_ROOT_CAUSES.map(rc => rc.label);
 
-export default function Catalog({ year, month, monthLabel, components, isCurrentPeriod }) {
+export default function Catalog({ year, month, monthLabel, components, isCurrentPeriod, dashboardView, activeTab, isFiltered }) {
   const { data, loading, todayLabel } = useTabData({
     year, month, components,
     rcLabels: CAT_RC_LABELS,
     mockData:  MOCK_TAB_CATALOG,
+    dashboardView, activeTab, isFiltered,
   });
 
   return (
@@ -73,4 +74,7 @@ Catalog.propTypes = {
   monthLabel:       PropTypes.string.isRequired,
   components:       PropTypes.string.isRequired,
   isCurrentPeriod:  PropTypes.bool.isRequired,
+  dashboardView:    PropTypes.string.isRequired,
+  activeTab:        PropTypes.string.isRequired,
+  isFiltered:       PropTypes.bool.isRequired,
 };

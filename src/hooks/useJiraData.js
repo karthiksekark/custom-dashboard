@@ -34,7 +34,7 @@ function createEmptyRMData() {
   };
 }
 
-export function useJiraData(year, month, components) {
+export function useJiraData({ year, month, components, dashboardView, activeTab, isFiltered }) {
   const [data,      setData]      = useState(createEmptyRMData);
   const [loading,   setLoading]   = useState(true);
   const [usingMock, setUsingMock] = useState(false);
@@ -49,13 +49,15 @@ export function useJiraData(year, month, components) {
       return;
     }
 
+    const ctx = { dashboardView, activeTab, isFiltered };
+
     try {
       const [priority, status, daily, health, impl] = await Promise.all([
-        api.fetchDefectsByPriority(year, month, components),
-        api.fetchDefectsByStatus(year, month, components),
-        api.fetchDailyMetrics(year, month, components),
-        api.fetchHealthScore(year, month, components),
-        api.fetchImplTickets(),
+        api.fetchDefectsByPriority(year, month, components, ctx),
+        api.fetchDefectsByStatus(year, month, components, ctx),
+        api.fetchDailyMetrics(year, month, components, ctx),
+        api.fetchHealthScore(year, month, components, ctx),
+        api.fetchImplTickets(ctx),
       ]);
 
       setData({
@@ -76,7 +78,7 @@ export function useJiraData(year, month, components) {
     } finally {
       setLoading(false);
     }
-  }, [year, month, components]);
+  }, [year, month, components, dashboardView, activeTab, isFiltered]);
 
   useEffect(() => { load(); }, [load]);
 

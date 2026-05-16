@@ -107,10 +107,10 @@ function Dashboard() {
 
       <>
         {activeTab === 'Release Management' && (
-          <ReleaseMgmt components={rmComponents} year={year} month={month} isCurrentPeriod={isCurrentPeriod} />
+          <ReleaseMgmt components={rmComponents} year={year} month={month} isCurrentPeriod={isCurrentPeriod} dashboardView={dashboardView} activeTab={activeTab} isFiltered={isFiltered} />
         )}
-        {activeTab === 'FED'     && <FED     year={year} month={month} monthLabel={monthLabel} components={fedComponents} isCurrentPeriod={isCurrentPeriod} />}
-        {activeTab === 'Catalog' && <Catalog year={year} month={month} monthLabel={monthLabel} components={catComponents} isCurrentPeriod={isCurrentPeriod} />}
+        {activeTab === 'FED'     && <FED     year={year} month={month} monthLabel={monthLabel} components={fedComponents} isCurrentPeriod={isCurrentPeriod} dashboardView={dashboardView} activeTab={activeTab} isFiltered={isFiltered} />}
+        {activeTab === 'Catalog' && <Catalog year={year} month={month} monthLabel={monthLabel} components={catComponents} isCurrentPeriod={isCurrentPeriod} dashboardView={dashboardView} activeTab={activeTab} isFiltered={isFiltered} />}
       </>
     </div>
   );

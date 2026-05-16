@@ -19,7 +19,7 @@ function createEmptyData(rcLabels) {
   };
 }
 
-export function useTabData({ year, month, components, rcLabels, mockData }) {
+export function useTabData({ year, month, components, rcLabels, mockData, dashboardView, activeTab, isFiltered }) {
   const [data,      setData]      = useState(() => createEmptyData(rcLabels));
   const [loading,   setLoading]   = useState(true);
   const [usingMock, setUsingMock] = useState(false);
@@ -34,6 +34,8 @@ export function useTabData({ year, month, components, rcLabels, mockData }) {
       return;
     }
 
+    const ctx = { dashboardView, activeTab, isFiltered };
+
     try {
       const [
         impl, defectsToday, regressionToday,
@@ -42,17 +44,17 @@ export function useTabData({ year, month, components, rcLabels, mockData }) {
         healthScore, defectsByPriority,
         dailyMetrics, quarters,
       ] = await Promise.all([
-        api.fetchCurrentDayImplByLabel(components),
-        api.fetchCurrentDayDefectsByPriority(components),
-        api.fetchRegressionDefectsByPriority(components),
-        api.fetchTodayDefectsByRootCause(components, rcLabels),
-        api.fetchTodayRegressionByRootCause(components, rcLabels),
-        api.fetchDefectsByRootCause(year, month, components, rcLabels),
-        api.fetchRegressionByRootCause(year, month, components, rcLabels),
-        api.fetchHealthScore(year, month, components),
-        api.fetchDefectsByPriority(year, month, components),
-        api.fetchTabDailyMetrics(year, month, components),
-        api.fetchTabQuarters(year, components),
+        api.fetchCurrentDayImplByLabel(components, ctx),
+        api.fetchCurrentDayDefectsByPriority(components, ctx),
+        api.fetchRegressionDefectsByPriority(components, ctx),
+        api.fetchTodayDefectsByRootCause(components, rcLabels, ctx),
+        api.fetchTodayRegressionByRootCause(components, rcLabels, ctx),
+        api.fetchDefectsByRootCause(year, month, components, rcLabels, ctx),
+        api.fetchRegressionByRootCause(year, month, components, rcLabels, ctx),
+        api.fetchHealthScore(year, month, components, ctx),
+        api.fetchDefectsByPriority(year, month, components, ctx),
+        api.fetchTabDailyMetrics(year, month, components, ctx),
+        api.fetchTabQuarters(year, components, ctx),
       ]);
 
       setData({
@@ -72,7 +74,7 @@ export function useTabData({ year, month, components, rcLabels, mockData }) {
     } finally {
       setLoading(false);
     }
-  }, [year, month, components, rcLabels, mockData]);
+  }, [year, month, components, rcLabels, mockData, dashboardView, activeTab, isFiltered]);
 
   useEffect(() => { load(); }, [load]);
 

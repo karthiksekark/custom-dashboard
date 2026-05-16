@@ -41,7 +41,7 @@ function compClause(components) {
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
-export async function fetchDefectsByPriority(year, month, components) {
+export async function fetchDefectsByPriority(year, month, components, { dashboardView, activeTab, isFiltered } = {}) {
   const { start, end } = rangeJql(year, month);
   const jql  = `issuetype = Bug${compClause(components)} AND created >= "${start}" AND created <= "${end}" ORDER BY created DESC`;
   const data = await jqlSearch(jql);
@@ -55,7 +55,7 @@ export async function fetchDefectsByPriority(year, month, components) {
   return ['Critical', 'High', 'Medium', 'Low'].filter(k => counts[k]).map(name => ({ name, value: counts[name] }));
 }
 
-export async function fetchDefectsByStatus(year, month, components) {
+export async function fetchDefectsByStatus(year, month, components, { dashboardView, activeTab, isFiltered } = {}) {
   const { start, end } = rangeJql(year, month);
   const jql  = `issuetype = Bug${compClause(components)} AND created >= "${start}" AND created <= "${end}" ORDER BY created DESC`;
   const data = await jqlSearch(jql);
@@ -69,7 +69,7 @@ export async function fetchDefectsByStatus(year, month, components) {
   return Object.entries(counts).map(([name, value]) => ({ name, value }));
 }
 
-export async function fetchDailyMetrics(year, month, components) {
+export async function fetchDailyMetrics(year, month, components, { dashboardView, activeTab, isFiltered } = {}) {
   const { start, end } = rangeJql(year, month);
   const jql  = `project is not EMPTY${compClause(components)} AND created >= "${start}" AND created <= "${end}" ORDER BY created DESC`;
   const data = await jqlSearch(jql);
@@ -106,7 +106,7 @@ export async function fetchDailyMetrics(year, month, components) {
     });
 }
 
-export async function fetchHealthScore(year, month, components) {
+export async function fetchHealthScore(year, month, components, { dashboardView, activeTab, isFiltered } = {}) {
   const { start, end } = rangeJql(year, month);
   const jql  = `project is not EMPTY${compClause(components)} AND created >= "${start}" AND created <= "${end}"`;
   const data = await jqlSearch(jql);
@@ -115,7 +115,7 @@ export async function fetchHealthScore(year, month, components) {
   return Math.round((closed / data.issues.length) * 100);
 }
 
-export async function fetchTodayDefectsByRootCause(components, rcLabels) {
+export async function fetchTodayDefectsByRootCause(components, rcLabels, { dashboardView, activeTab, isFiltered } = {}) {
   const today = moment().tz(EST).format('YYYY-MM-DD');
   const jql   = `issuetype = Bug${compClause(components)} AND created = "${today}"`;
   const data  = await jqlSearch(jql);
@@ -135,7 +135,7 @@ export async function fetchTodayDefectsByRootCause(components, rcLabels) {
   return result;
 }
 
-export async function fetchTodayRegressionByRootCause(components, rcLabels) {
+export async function fetchTodayRegressionByRootCause(components, rcLabels, { dashboardView, activeTab, isFiltered } = {}) {
   const today = moment().tz(EST).format('YYYY-MM-DD');
   const jql   = `issuetype = Bug AND labels = "Regression"${compClause(components)} AND created = "${today}"`;
   const data  = await jqlSearch(jql);
@@ -155,7 +155,7 @@ export async function fetchTodayRegressionByRootCause(components, rcLabels) {
   return result;
 }
 
-export async function fetchDefectsByRootCause(year, month, components, rcLabels) {
+export async function fetchDefectsByRootCause(year, month, components, rcLabels, { dashboardView, activeTab, isFiltered } = {}) {
   const { start, end } = rangeJql(year, month);
   const jql  = `issuetype = Bug${compClause(components)} AND created >= "${start}" AND created <= "${end}"`;
   const data = await jqlSearch(jql);
@@ -175,7 +175,7 @@ export async function fetchDefectsByRootCause(year, month, components, rcLabels)
   return result;
 }
 
-export async function fetchRegressionByRootCause(year, month, components, rcLabels) {
+export async function fetchRegressionByRootCause(year, month, components, rcLabels, { dashboardView, activeTab, isFiltered } = {}) {
   const { start, end } = rangeJql(year, month);
   const jql  = `issuetype = Bug AND labels = "Regression"${compClause(components)} AND created >= "${start}" AND created <= "${end}"`;
   const data = await jqlSearch(jql);
@@ -195,7 +195,7 @@ export async function fetchRegressionByRootCause(year, month, components, rcLabe
   return result;
 }
 
-export async function fetchCurrentDayImplByLabel(components) {
+export async function fetchCurrentDayImplByLabel(components, { dashboardView, activeTab, isFiltered } = {}) {
   const today = moment().tz(EST).format('YYYY-MM-DD');
   const jql   = `created = "${today}"${compClause(components)} ORDER BY created DESC`;
   const data  = await jqlSearch(jql);
@@ -214,7 +214,7 @@ export async function fetchCurrentDayImplByLabel(components) {
     .map(name => ({ name, value: counts[name] }));
 }
 
-export async function fetchCurrentDayDefectsByPriority(components) {
+export async function fetchCurrentDayDefectsByPriority(components, { dashboardView, activeTab, isFiltered } = {}) {
   const today = moment().tz(EST).format('YYYY-MM-DD');
   const jql   = `issuetype = Bug${compClause(components)} AND created = "${today}"`;
   const data  = await jqlSearch(jql);
@@ -228,7 +228,7 @@ export async function fetchCurrentDayDefectsByPriority(components) {
   return ['Critical', 'High', 'Medium', 'Low'].filter(k => counts[k]).map(name => ({ name, value: counts[name] }));
 }
 
-export async function fetchRegressionDefectsByPriority(components) {
+export async function fetchRegressionDefectsByPriority(components, { dashboardView, activeTab, isFiltered } = {}) {
   const today = moment().tz(EST).format('YYYY-MM-DD');
   const jql   = `issuetype = Bug AND labels = "Regression"${compClause(components)} AND created = "${today}"`;
   const data  = await jqlSearch(jql);
@@ -249,7 +249,7 @@ function tabQuarterPeriod(qNum, year) {
   return `${periods[qNum - 1]} ${year}`;
 }
 
-export async function fetchTabDailyMetrics(year, month, components) {
+export async function fetchTabDailyMetrics(year, month, components, { dashboardView, activeTab, isFiltered } = {}) {
   const { start, end } = rangeJql(year, month);
   const jql  = `project is not EMPTY${compClause(components)} AND created >= "${start}" AND created <= "${end}" ORDER BY created DESC`;
   const data = await jqlSearch(jql);
@@ -317,7 +317,7 @@ export async function fetchTabDailyMetrics(year, month, components) {
   return { rows, totals };
 }
 
-export async function fetchTabQuarters(year, components) {
+export async function fetchTabQuarters(year, components, { dashboardView, activeTab, isFiltered } = {}) {
   const y = Number(year);
   const quarters = [1, 2, 3, 4].map(qNum => {
     const startMonth = (qNum - 1) * 3;
@@ -368,7 +368,7 @@ export async function fetchTabQuarters(year, components) {
   });
 }
 
-export async function fetchImplTickets() {
+export async function fetchImplTickets({ dashboardView, activeTab, isFiltered } = {}) {
   const today = moment().tz(EST).format('YYYY-MM-DD');
   const jql   = `project = DOPMO AND status not in (Cancelled, "On Hold", Open) AND due = "${today}" AND (component in ("DIGOPS/UAT", "DIGOPS/OPUAT", "DIGOPS/CR_UAT") OR summary ~ "BZ VAL" OR summary ~ "BIZ VAL" OR summary ~ "BUSVAL" OR labels in ("bizval")) AND (labels not in ("Lower-Env", Lower_Env) AND labels is not EMPTY) AND issuetype not in (Task) ORDER BY created DESC`;
   const data  = await jqlSearch(jql);
