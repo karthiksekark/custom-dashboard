@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
+import moment from 'moment-timezone';
 import * as api from '../services/jiraApi';
 import {
   MOCK_DEFECTS_BY_PRIORITY, MOCK_DEFECTS_BY_STATUS, MOCK_IMPL_TICKETS,
   MOCK_DEFECTS_TABLE, MOCK_RELEASE_ROWS, MOCK_TOTALS,
-  MOCK_QUARTERS, MOCK_HEALTH_SCORE, MOCK_TODAY_LABEL,
+  MOCK_QUARTERS, MOCK_HEALTH_SCORE,
 } from '../services/mockData';
+
+const EST = 'America/New_York';
 
 const JIRA_CONFIGURED = !!import.meta.env.VITE_JIRA_BASE_URL;
 
@@ -34,6 +37,7 @@ function createEmptyRMData() {
   };
 }
 
+
 export function useJiraData({ year, month, components, dashboardView, activeTab, isFiltered }) {
   const [data,      setData]      = useState(createEmptyRMData);
   const [loading,   setLoading]   = useState(true);
@@ -52,12 +56,14 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
     const ctx = { dashboardView, activeTab, isFiltered };
 
     try {
-      const [priority, status, daily, health, impl] = await Promise.all([
+      const [priority, status, daily, health, impl, defectsTable, quarters] = await Promise.all([
         api.fetchDefectsByPriority(year, month, components, ctx),
         api.fetchDefectsByStatus(year, month, components, ctx),
         api.fetchDailyMetrics(year, month, components, ctx),
         api.fetchHealthScore(year, month, components, ctx),
         api.fetchImplTickets(ctx),
+        api.fetchDefectsAlertTable(components, ctx),
+        api.fetchTabQuarters(year, components, ctx),
       ]);
 
       setData({
@@ -67,9 +73,8 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
         totals:            buildTotals(daily),
         healthScore:       health,
         implTickets:       impl,
-        defectsTable:      MOCK_DEFECTS_TABLE,
-        quarters:          MOCK_QUARTERS,
-        todayLabel:        MOCK_TODAY_LABEL,
+        defectsTable,
+        quarters,
       });
       setUsingMock(false);
     } catch {
@@ -82,7 +87,12 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
 
   useEffect(() => { load(); }, [load]);
 
-  return { data, loading, usingMock };
+  return {
+    data,
+    loading,
+    usingMock,
+    todayLabel: moment().tz(EST).format('M/D/YYYY'),
+  };
 }
 
 function getMockData() {
@@ -95,7 +105,6 @@ function getMockData() {
     implTickets:       MOCK_IMPL_TICKETS,
     defectsTable:      MOCK_DEFECTS_TABLE,
     quarters:          MOCK_QUARTERS,
-    todayLabel:        MOCK_TODAY_LABEL,
   };
 }
 

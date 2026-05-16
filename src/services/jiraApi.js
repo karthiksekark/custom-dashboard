@@ -368,6 +368,27 @@ export async function fetchTabQuarters(year, components, { dashboardView, active
   });
 }
 
+export async function fetchDefectsAlertTable(components, { dashboardView, activeTab, isFiltered } = {}) {
+  const today = moment().tz(EST).format('YYYY-MM-DD');
+  const jql   = `issuetype = Bug AND status not in (Done, Closed, Resolved)${compClause(components)} AND created <= "${today}"`;
+  const data  = await jqlSearch(jql);
+
+  const byStatus = {};
+  data.issues.forEach(issue => {
+    const s = issue.fields.status?.name || 'Unknown';
+    const p = issue.fields.priority?.name;
+    if (!byStatus[s]) byStatus[s] = { status: s, critical: 0, high: 0, medium: 0, low: 0, total: 0 };
+    const row = byStatus[s];
+    if      (p === 'Critical') row.critical += 1;
+    else if (p === 'High')     row.high     += 1;
+    else if (p === 'Medium')   row.medium   += 1;
+    else if (p === 'Low')      row.low      += 1;
+    row.total += 1;
+  });
+
+  return Object.values(byStatus);
+}
+
 export async function fetchImplTickets({ dashboardView, activeTab, isFiltered } = {}) {
   const today = moment().tz(EST).format('YYYY-MM-DD');
   const jql   = `project = DOPMO AND status not in (Cancelled, "On Hold", Open) AND due = "${today}" AND (component in ("DIGOPS/UAT", "DIGOPS/OPUAT", "DIGOPS/CR_UAT") OR summary ~ "BZ VAL" OR summary ~ "BIZ VAL" OR summary ~ "BUSVAL" OR labels in ("bizval")) AND (labels not in ("Lower-Env", Lower_Env) AND labels is not EMPTY) AND issuetype not in (Task) ORDER BY created DESC`;
