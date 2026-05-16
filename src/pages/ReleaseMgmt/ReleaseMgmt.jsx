@@ -26,8 +26,8 @@ function quarterDateRange(yearStr, qIndex) {
   return { startDate: start, endDate: end };
 }
 
-export default function ReleaseMgmt({ components, year, month, isCurrentPeriod }) {
-  const { data, loading } = useJiraData(year, month, components);
+export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, dashboardView, activeTab, isFiltered }) {
+  const { data, loading } = useJiraData({ year, month, components, dashboardView, activeTab, isFiltered });
 
   // ── Derived date values (all EST) ──────────────────────────────────────────
   const todayMoment  = moment().tz(EST);
@@ -132,4 +132,7 @@ ReleaseMgmt.propTypes = {
   year:            PropTypes.string.isRequired,
   month:           PropTypes.string.isRequired,
   isCurrentPeriod: PropTypes.bool.isRequired,
+  dashboardView:   PropTypes.string.isRequired,
+  activeTab:       PropTypes.string.isRequired,
+  isFiltered:      PropTypes.bool.isRequired,
 };

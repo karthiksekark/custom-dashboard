@@ -5,7 +5,7 @@ import * as api from '../services/jiraApi';
 const JIRA_CONFIGURED = !!import.meta.env.VITE_JIRA_BASE_URL;
 const EST             = 'America/New_York';
 
-export function useCurrentDayData(components, mockData) {
+export function useCurrentDayData({ components, mockData, dashboardView, activeTab, isFiltered }) {
   const [data,      setData]      = useState(null);
   const [loading,   setLoading]   = useState(true);
   const [usingMock, setUsingMock] = useState(false);
@@ -21,11 +21,13 @@ export function useCurrentDayData(components, mockData) {
       return;
     }
 
+    const ctx = { dashboardView, activeTab, isFiltered };
+
     try {
       const [impl, defects, regression] = await Promise.all([
-        api.fetchCurrentDayImplByLabel(components),
-        api.fetchCurrentDayDefectsByPriority(components),
-        api.fetchRegressionDefectsByPriority(components),
+        api.fetchCurrentDayImplByLabel(components, ctx),
+        api.fetchCurrentDayDefectsByPriority(components, ctx),
+        api.fetchRegressionDefectsByPriority(components, ctx),
       ]);
       setData({ impl, defects, regression });
       setUsingMock(false);
@@ -35,7 +37,7 @@ export function useCurrentDayData(components, mockData) {
     } finally {
       setLoading(false);
     }
-  }, [components, mockData]);
+  }, [components, mockData, dashboardView, activeTab, isFiltered]);
 
   useEffect(() => { load(); }, [load]);
 
