@@ -31,7 +31,8 @@ export function useCurrentDayData({ components, mockData, dashboardView, activeT
       ]);
       setData({ impl, defects, regression });
       setUsingMock(false);
-    } catch {
+    } catch (err) {
+      console.error('[useCurrentDayData] API error, falling back to mock data:', err);
       setData(mockData);
       setUsingMock(true);
     } finally {

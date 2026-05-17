@@ -77,7 +77,8 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
         quarters,
       });
       setUsingMock(false);
-    } catch {
+    } catch (err) {
+      console.error('[useJiraData] API error, falling back to mock data:', err);
       setData(getMockData());
       setUsingMock(true);
     } finally {

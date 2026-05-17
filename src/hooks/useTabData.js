@@ -68,7 +68,8 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
         quarters,
       });
       setUsingMock(false);
-    } catch {
+    } catch (err) {
+      console.error('[useTabData] API error, falling back to mock data:', err);
       setData(mockData);
       setUsingMock(true);
     } finally {
