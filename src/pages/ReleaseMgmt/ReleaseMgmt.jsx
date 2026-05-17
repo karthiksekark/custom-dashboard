@@ -66,7 +66,7 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
 
           <Card>
             <SectionHeader eyebrow="Implementation" title={`Current Day's Tickets — ${todayLabel}`} />
-            <ImplementationTable rows={data.implTickets} todayIso={todayIso} />
+            <ImplementationTable rows={data.implTickets} todayIso={todayIso} components={components} />
           </Card>
         </div>
       ) : (
@@ -85,7 +85,7 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
       {isCurrentPeriod && (
         <Card variant="alert">
           <SectionHeader eyebrow="⚠ Alert" title={`Defects Not Closed before 8am — ${todayLabel}`} variant="alert" />
-          <DefectsAlertTable rows={data.defectsTable} todayIso={todayIso} />
+          <DefectsAlertTable rows={data.defectsTable} todayIso={todayIso} components={components} />
         </Card>
       )}
 
@@ -106,6 +106,7 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
           totals={data.totals}
           year={year}
           month={month}
+          components={components}
         />
       </Card>
 
@@ -118,6 +119,7 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
               key={i}
               quarter={q}
               isActive={i === activeQIndex}
+              components={components}
             />
           ))}
         </div>

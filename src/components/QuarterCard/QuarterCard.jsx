@@ -6,12 +6,9 @@ import {
   quarterTotalDefectsLink,
   quarterPriorityLink,
 } from '../../services/jiraLinks';
-import { useAppContext } from '../../hooks/useAppContext';
 import './QuarterCard.scss';
 
-export default function QuarterCard({ quarter, isActive }) {
-  const { state }  = useAppContext();
-  const components = state.preferences.components;
+export default function QuarterCard({ quarter, isActive, components }) {
   const { q, period, days, tickets, defects, c, h, m, l, hs, acc, startDate, endDate } = quarter;
   const empty = days === 0;
   const hc    = healthColor(hs);
@@ -88,5 +85,6 @@ QuarterCard.propTypes = {
     startDate: PropTypes.string,
     endDate:   PropTypes.string,
   }).isRequired,
-  isActive: PropTypes.bool,
+  isActive:   PropTypes.bool,
+  components: PropTypes.string,
 };

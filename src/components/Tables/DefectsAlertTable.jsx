@@ -3,7 +3,6 @@ import Chip from '../Chip/Chip';
 import JiraLink from '../JiraLink/JiraLink';
 import { statusDot } from '../../services/healthUtils';
 import { defectStatusPriorityLink, defectConsolidatedLink } from '../../services/jiraLinks';
-import { useAppContext } from '../../hooks/useAppContext';
 import './Tables.scss';
 
 const COLS       = ['Status', 'Critical', 'High', 'Medium', 'Low', 'Total'];
@@ -21,10 +20,8 @@ function computeTotals(rows) {
   );
 }
 
-export default function DefectsAlertTable({ rows, todayIso }) {
-  const { state }  = useAppContext();
-  const components = state.preferences.components;
-  const totals     = computeTotals(rows);
+export default function DefectsAlertTable({ rows, todayIso, components }) {
+  const totals = computeTotals(rows);
 
   return (
     <div className="table-scroll">
@@ -125,6 +122,7 @@ export default function DefectsAlertTable({ rows, todayIso }) {
 }
 
 DefectsAlertTable.propTypes = {
-  rows:     PropTypes.arrayOf(PropTypes.object).isRequired,
-  todayIso: PropTypes.string,
+  rows:       PropTypes.arrayOf(PropTypes.object).isRequired,
+  todayIso:   PropTypes.string,
+  components: PropTypes.string,
 };

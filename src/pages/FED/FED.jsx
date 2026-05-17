@@ -61,9 +61,10 @@ export default function FED({ year, month, monthLabel, components, isCurrentPeri
           totals={data.dailyMetrics.totals}
           year={year}
           month={month}
+          components={components}
         />
       </Card>
-      <TabQuarterSection quarters={data.quarters} year={year} month={month} />
+      <TabQuarterSection quarters={data.quarters} year={year} month={month} components={components} />
     </div>
   );
 }

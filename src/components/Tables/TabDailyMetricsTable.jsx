@@ -17,7 +17,6 @@ import {
   tabMonthlyFastPathLink,
   tabMonthlyDirectPubLink,
 } from '../../services/jiraLinks';
-import { useAppContext } from '../../hooks/useAppContext';
 import './Tables.scss';
 
 const EST = 'America/New_York';
@@ -50,10 +49,8 @@ function ThCell({ label }) {
   );
 }
 
-export default function TabDailyMetricsTable({ rows, totals, year, month }) {
-  const { state }  = useAppContext();
-  const components = state.preferences.components;
-  const todayStr   = moment().tz(EST).format('M/D');
+export default function TabDailyMetricsTable({ rows, totals, year, month, components }) {
+  const todayStr = moment().tz(EST).format('M/D');
 
   const headers = [
     'Date', 'Total Defects', 'Critical', 'High', 'Medium', 'Low',
@@ -238,8 +235,9 @@ export default function TabDailyMetricsTable({ rows, totals, year, month }) {
 }
 
 TabDailyMetricsTable.propTypes = {
-  rows:   PropTypes.arrayOf(PropTypes.object).isRequired,
-  totals: PropTypes.object,
-  year:   PropTypes.string.isRequired,
-  month:  PropTypes.string.isRequired,
+  rows:       PropTypes.arrayOf(PropTypes.object).isRequired,
+  totals:     PropTypes.object,
+  year:       PropTypes.string.isRequired,
+  month:      PropTypes.string.isRequired,
+  components: PropTypes.string,
 };

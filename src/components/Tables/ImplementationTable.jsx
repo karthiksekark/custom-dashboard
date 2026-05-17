@@ -2,7 +2,6 @@ import PropTypes from 'prop-types';
 import Chip from '../Chip/Chip';
 import JiraLink from '../JiraLink/JiraLink';
 import { implTeamFieldLink, implConsolidatedFieldLink } from '../../services/jiraLinks';
-import { useAppContext } from '../../hooks/useAppContext';
 import './Tables.scss';
 
 const COLS         = ['Owner & Testing Teams', 'UAT', 'OPUAT', 'CR_UAT', 'BIZ_VAL', 'Total'];
@@ -21,9 +20,7 @@ function computeTotals(rows) {
   );
 }
 
-export default function ImplementationTable({ rows, todayIso }) {
-  const { state } = useAppContext();
-  const components = state.preferences.components;
+export default function ImplementationTable({ rows, todayIso, components }) {
   const totals = computeTotals(rows);
 
   return (
@@ -119,6 +116,7 @@ export default function ImplementationTable({ rows, todayIso }) {
 }
 
 ImplementationTable.propTypes = {
-  rows:     PropTypes.arrayOf(PropTypes.object).isRequired,
-  todayIso: PropTypes.string,
+  rows:       PropTypes.arrayOf(PropTypes.object).isRequired,
+  todayIso:   PropTypes.string,
+  components: PropTypes.string,
 };
