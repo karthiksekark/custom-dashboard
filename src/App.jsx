@@ -6,23 +6,19 @@ import Header from './components/Header/Header';
 import ControlBar from './components/ControlBar/ControlBar';
 import Tabs from './components/Tabs/Tabs';
 import ReleaseMgmt from './pages/ReleaseMgmt/ReleaseMgmt';
-import FED from './pages/FED/FED';
-import Catalog from './pages/Catalog/Catalog';
+import TabPage from './pages/TabPage/TabPage';
 import AuthModal from './components/AuthModal/AuthModal';
 import ConfigModal from './components/ConfigModal/ConfigModal';
 import SettingsPanel from './components/SettingsPanel/SettingsPanel';
+import OfflineBanner from './components/OfflineBanner/OfflineBanner';
+import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 import { useDateOptions } from './hooks/useDateOptions';
 import { useStickyOffsets } from './hooks/useStickyOffsets';
+import { TEAM_MAP } from './config/teams.config';
 import './styles/main.scss';
 import './App.scss';
 
 const EST = 'America/New_York';
-
-const TEAM_NAMES = {
-  'release-management': 'Release Management',
-  'fed':                'FED',
-  'catalog':            'Catalog',
-};
 
 function getDefaults() {
   const now = moment().tz(EST);
@@ -48,14 +44,14 @@ function Dashboard() {
   const { months, years } = useDateOptions();
 
   const monthLabel      = months.find(m => m.value === month && m.year === year)?.label ?? month;
-  const teamName        = TEAM_NAMES[dashboardView] ?? null;
+  const teamName        = TEAM_MAP[dashboardView]?.label ?? null;
   const isFiltered      = dashboardView !== 'default';
   const nowEst          = moment().tz(EST);
   const isCurrentPeriod = nowEst.format('YYYY') === year && nowEst.format('MM') === month;
   const usingMock       = !import.meta.env.VITE_JIRA_BASE_URL;
 
   // Active tab for filtered view: map view id → tab name
-  const filteredTab = isFiltered ? (TEAM_NAMES[dashboardView] ?? tab) : tab;
+  const filteredTab = isFiltered ? (TEAM_MAP[dashboardView]?.label ?? tab) : tab;
   const activeTab   = isFiltered ? filteredTab : tab;
 
   useStickyOffsets(isFiltered);
@@ -97,6 +93,8 @@ function Dashboard() {
 
       {settingsOpen && <SettingsPanel />}
 
+      <OfflineBanner />
+
       {usingMock && (
         <div className="app__mock-banner app__mock-banner--sticky">
           <div className="app__mock-banner__inner">
@@ -107,10 +105,32 @@ function Dashboard() {
 
       <>
         {activeTab === 'Release Management' && (
-          <ReleaseMgmt components={rmComponents} year={year} month={month} isCurrentPeriod={isCurrentPeriod} dashboardView={dashboardView} activeTab={activeTab} isFiltered={isFiltered} />
+          <ErrorBoundary>
+            <ReleaseMgmt components={rmComponents} year={year} month={month} isCurrentPeriod={isCurrentPeriod} dashboardView={dashboardView} activeTab={activeTab} isFiltered={isFiltered} />
+          </ErrorBoundary>
         )}
-        {activeTab === 'FED'     && <FED     year={year} month={month} monthLabel={monthLabel} components={fedComponents} isCurrentPeriod={isCurrentPeriod} dashboardView={dashboardView} activeTab={activeTab} isFiltered={isFiltered} />}
-        {activeTab === 'Catalog' && <Catalog year={year} month={month} monthLabel={monthLabel} components={catComponents} isCurrentPeriod={isCurrentPeriod} dashboardView={dashboardView} activeTab={activeTab} isFiltered={isFiltered} />}
+        {activeTab === 'FED' && (
+          <ErrorBoundary>
+            <TabPage
+              year={year} month={month} monthLabel={monthLabel}
+              components={fedComponents}
+              isCurrentPeriod={isCurrentPeriod}
+              dashboardView={dashboardView} activeTab={activeTab} isFiltered={isFiltered}
+              team={TEAM_MAP['fed']}
+            />
+          </ErrorBoundary>
+        )}
+        {activeTab === 'Catalog' && (
+          <ErrorBoundary>
+            <TabPage
+              year={year} month={month} monthLabel={monthLabel}
+              components={catComponents}
+              isCurrentPeriod={isCurrentPeriod}
+              dashboardView={dashboardView} activeTab={activeTab} isFiltered={isFiltered}
+              team={TEAM_MAP['catalog']}
+            />
+          </ErrorBoundary>
+        )}
       </>
     </div>
   );

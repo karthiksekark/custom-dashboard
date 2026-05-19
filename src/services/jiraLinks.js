@@ -1,7 +1,6 @@
-import moment from 'moment-timezone';
+import { compClause, rangeJql } from '../utils/jqlUtils';
 
-const EST       = 'America/New_York';
-const JIRA_BASE = import.meta.env.VITE_JIRA_BASE_URL  || '';
+const JIRA_BASE = import.meta.env.VITE_JIRA_BASE_URL   || '';
 const PROJECT   = import.meta.env.VITE_JIRA_PROJECT_KEY || null;
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
@@ -17,12 +16,6 @@ function buildUrl(jql) {
 function rowDateToIso(dateStr, year) {
   const [m, d] = dateStr.split('/');
   return `${year}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-}
-
-function compClause(components) {
-  if (!components?.trim()) return '';
-  const names = components.split(',').map(c => c.trim()).filter(Boolean);
-  return names.length ? ` AND component in (${names.map(n => `"${n}"`).join(', ')})` : '';
 }
 
 // ── Implementation table ──────────────────────────────────────────────────────
@@ -76,23 +69,20 @@ export function dailyPriorityLink(dateStr, year, priority, components) {
 
 // Monthly totals (tfoot)
 export function monthlyTotalTicketsLink(year, month, components) {
-  const start = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).format('YYYY-MM-DD');
-  const end   = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).endOf('month').format('YYYY-MM-DD');
-  const comp  = compClause(components);
+  const { start, end } = rangeJql(year, month);
+  const comp = compClause(components);
   return buildUrl(`${projectClause()}${comp} AND created >= "${start}" AND created <= "${end}"`);
 }
 
 export function monthlyTotalDefectsLink(year, month, components) {
-  const start = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).format('YYYY-MM-DD');
-  const end   = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).endOf('month').format('YYYY-MM-DD');
-  const comp  = compClause(components);
+  const { start, end } = rangeJql(year, month);
+  const comp = compClause(components);
   return buildUrl(`issuetype = Bug${comp} AND created >= "${start}" AND created <= "${end}"`);
 }
 
 export function monthlyPriorityLink(year, month, priority, components) {
-  const start = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).format('YYYY-MM-DD');
-  const end   = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).endOf('month').format('YYYY-MM-DD');
-  const comp  = compClause(components);
+  const { start, end } = rangeJql(year, month);
+  const comp = compClause(components);
   return buildUrl(`issuetype = Bug${comp} AND priority = "${priority}" AND created >= "${start}" AND created <= "${end}"`);
 }
 
@@ -132,23 +122,20 @@ export function tabDailyDirectPubLink(dateStr, year, components) {
 }
 
 export function tabMonthlyRegressionLink(year, month, components) {
-  const start = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).format('YYYY-MM-DD');
-  const end   = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).endOf('month').format('YYYY-MM-DD');
-  const comp  = compClause(components);
+  const { start, end } = rangeJql(year, month);
+  const comp = compClause(components);
   return buildUrl(`issuetype = Bug AND labels = "Regression"${comp} AND created >= "${start}" AND created <= "${end}"`);
 }
 
 export function tabMonthlyFastPathLink(year, month, components) {
-  const start = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).format('YYYY-MM-DD');
-  const end   = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).endOf('month').format('YYYY-MM-DD');
-  const comp  = compClause(components);
+  const { start, end } = rangeJql(year, month);
+  const comp = compClause(components);
   return buildUrl(`${projectClause()}${comp} AND labels = "Fast-Path" AND created >= "${start}" AND created <= "${end}"`);
 }
 
 export function tabMonthlyDirectPubLink(year, month, components) {
-  const start = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).format('YYYY-MM-DD');
-  const end   = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).endOf('month').format('YYYY-MM-DD');
-  const comp  = compClause(components);
+  const { start, end } = rangeJql(year, month);
+  const comp = compClause(components);
   return buildUrl(`${projectClause()}${comp} AND labels = "Direct-Publishing" AND created >= "${start}" AND created <= "${end}"`);
 }
 

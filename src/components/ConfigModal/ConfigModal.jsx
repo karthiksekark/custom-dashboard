@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import Modal from '../Modal/Modal';
+import TeamComponentInput from '../TeamComponentInput/TeamComponentInput';
 import { useAppContext } from '../../hooks/useAppContext';
 import { persistPreferences } from '../../context/AppContext';
+import { TEAMS } from '../../config/teams.config';
 import './ConfigModal.scss';
 
 const WARNING_ICON = (
@@ -12,42 +14,30 @@ const WARNING_ICON = (
   </svg>
 );
 
-const TEAM_FIELDS = [
-  { key: 'release-management', label: 'Release Management' },
-  { key: 'fed',                label: 'FED' },
-  { key: 'catalog',            label: 'Catalog' },
-];
-
 export default function ConfigModal() {
   const { state, dispatch } = useAppContext();
   const existing = state.preferences.teamComponents || {};
 
-  const [values, setValues] = useState({
-    'release-management': existing['release-management'] || '',
-    'fed':                existing['fed']                || '',
-    'catalog':            existing['catalog']            || '',
-  });
+  const [values, setValues] = useState(
+    Object.fromEntries(TEAMS.map(t => [t.key, existing[t.key] || '']))
+  );
   const [errors, setErrors] = useState({});
 
   function handleChange(key, val) {
-    setValues(v  => ({ ...v,   [key]: val }));
-    setErrors(e  => ({ ...e,   [key]: ''  }));
+    setValues(v => ({ ...v, [key]: val }));
+    setErrors(e => ({ ...e, [key]: '' }));
   }
 
   function handleSave() {
     const newErrors = {};
-    TEAM_FIELDS.forEach(({ key }) => {
+    TEAMS.forEach(({ key }) => {
       if (!values[key].trim()) newErrors[key] = 'Required.';
     });
     if (Object.keys(newErrors).length) { setErrors(newErrors); return; }
 
     const updated = {
       ...state.preferences,
-      teamComponents: {
-        'release-management': values['release-management'].trim(),
-        'fed':                values['fed'].trim(),
-        'catalog':            values['catalog'].trim(),
-      },
+      teamComponents: Object.fromEntries(TEAMS.map(t => [t.key, values[t.key].trim()])),
     };
     dispatch({ type: 'SET_PREFERENCES', payload: updated });
     persistPreferences(updated);
@@ -67,29 +57,16 @@ export default function ConfigModal() {
           every query.
         </p>
 
-        {TEAM_FIELDS.map(({ key, label }, i) => (
-          <div key={key}>
-            <label
-              htmlFor={`config-${key}`}
-              className="modal-body__label modal-body__label--required"
-            >
-              {label} Components
-            </label>
-            <input
-              id={`config-${key}`}
-              type="text"
-              className={`modal-body__input${errors[key] ? ' modal-body__input--error' : ''}`}
-              placeholder="e.g. Payments, Auth, Core API"
-              value={values[key]}
-              onChange={e => handleChange(key, e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSave()}
-              autoFocus={i === 0}
-            />
-            {errors[key]
-              ? <p className="modal-body__error">{errors[key]}</p>
-              : <p className="modal-body__hint">Comma-separated component names.</p>
-            }
-          </div>
+        {TEAMS.map((team, i) => (
+          <TeamComponentInput
+            key={team.key}
+            id={`config-${team.key}`}
+            label={team.label}
+            value={values[team.key]}
+            error={errors[team.key]}
+            onChange={val => handleChange(team.key, val)}
+            autoFocus={i === 0}
+          />
         ))}
 
         <button className="btn btn--primary btn--full" onClick={handleSave}>

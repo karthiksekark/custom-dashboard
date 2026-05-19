@@ -10,7 +10,7 @@ export function useCurrentDayData({ components, mockData, dashboardView, activeT
   const [loading,   setLoading]   = useState(true);
   const [usingMock, setUsingMock] = useState(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (signal) => {
     setLoading(true);
     setData(null);
 
@@ -21,7 +21,7 @@ export function useCurrentDayData({ components, mockData, dashboardView, activeT
       return;
     }
 
-    const ctx = { dashboardView, activeTab, isFiltered };
+    const ctx = { dashboardView, activeTab, isFiltered, signal };
 
     try {
       const [impl, defects, regression] = await Promise.all([
@@ -31,7 +31,9 @@ export function useCurrentDayData({ components, mockData, dashboardView, activeT
       ]);
       setData({ impl, defects, regression });
       setUsingMock(false);
-    } catch {
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      console.error('[useCurrentDayData] API error, falling back to mock data:', err);
       setData(mockData);
       setUsingMock(true);
     } finally {
@@ -39,12 +41,17 @@ export function useCurrentDayData({ components, mockData, dashboardView, activeT
     }
   }, [components, mockData, dashboardView, activeTab, isFiltered]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const controller = new AbortController();
+    load(controller.signal);
+    return () => controller.abort();
+  }, [load]);
 
   return {
     data,
     loading,
     usingMock,
+    // TODO: migrate to jqlUtils.todayLabel
     todayLabel: moment().tz(EST).format('M/D/YYYY'),
   };
 }

@@ -8,12 +8,9 @@ import {
   tabQuarterRegressionLink,
   tabQuarterFastPathLink,
 } from '../../services/jiraLinks';
-import { useAppContext } from '../../hooks/useAppContext';
 import './TabQuarterCard.scss';
 
-export default function TabQuarterCard({ quarter, isActive }) {
-  const { state }  = useAppContext();
-  const components = state.preferences.components;
+export default function TabQuarterCard({ quarter, isActive, components }) {
   const { q, period, days, tickets, defects, rg, fp, c, h, m, l, hs, acc, startDate, endDate } = quarter;
   const empty = days === 0;
   const hc    = healthColor(hs);
@@ -94,5 +91,6 @@ TabQuarterCard.propTypes = {
     startDate: PropTypes.string,
     endDate:   PropTypes.string,
   }).isRequired,
-  isActive: PropTypes.bool,
+  isActive:   PropTypes.bool,
+  components: PropTypes.string,
 };

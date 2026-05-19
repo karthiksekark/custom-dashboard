@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import moment from 'moment-timezone';
 import * as api from '../services/jiraApi';
+import * as cache from '../services/cache';
 import {
   MOCK_DEFECTS_BY_PRIORITY, MOCK_DEFECTS_BY_STATUS, MOCK_IMPL_TICKETS,
   MOCK_DEFECTS_TABLE, MOCK_RELEASE_ROWS, MOCK_TOTALS,
@@ -39,11 +40,12 @@ function createEmptyRMData() {
 
 
 export function useJiraData({ year, month, components, dashboardView, activeTab, isFiltered }) {
-  const [data,      setData]      = useState(createEmptyRMData);
-  const [loading,   setLoading]   = useState(true);
-  const [usingMock, setUsingMock] = useState(false);
+  const [data,          setData]          = useState(createEmptyRMData);
+  const [loading,       setLoading]       = useState(true);
+  const [usingMock,     setUsingMock]     = useState(false);
+  const [lastFetchedAt, setLastFetchedAt] = useState(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (signal) => {
     setLoading(true);
 
     if (!JIRA_CONFIGURED) {
@@ -53,31 +55,52 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
       return;
     }
 
-    const ctx = { dashboardView, activeTab, isFiltered };
+    const ctx = { dashboardView, activeTab, isFiltered, signal };
 
     try {
-      const [priority, status, daily, health, impl, defectsTable, quarters] = await Promise.all([
+      // Check cache for the monthly/quarterly data (implTickets is always today's — never cached)
+      const cacheKey = cache.makeKey(year, month, components);
+      const cached   = cache.get(cacheKey);
+
+      // Always fetch implTickets fresh (today's data)
+      const implTickets = await api.fetchImplTickets(ctx);
+
+      if (cached) {
+        setData({ ...cached, implTickets });
+        setLastFetchedAt(new Date());
+        setLoading(false);
+        setUsingMock(false);
+        return;
+      }
+
+      const [priority, status, daily, health, defectsTable, quarters] = await Promise.all([
         api.fetchDefectsByPriority(year, month, components, ctx),
         api.fetchDefectsByStatus(year, month, components, ctx),
         api.fetchDailyMetrics(year, month, components, ctx),
         api.fetchHealthScore(year, month, components, ctx),
-        api.fetchImplTickets(ctx),
         api.fetchDefectsAlertTable(components, ctx),
         api.fetchTabQuarters(year, components, ctx),
       ]);
 
-      setData({
+      const result = {
         defectsByPriority: priority,
         defectsByStatus:   status,
         releaseRows:       daily,
         totals:            buildTotals(daily),
         healthScore:       health,
-        implTickets:       impl,
         defectsTable,
         quarters,
-      });
+      };
+
+      // Cache monthly/quarterly results (TTL: default 2 minutes, per cache.js implementation)
+      cache.set(cacheKey, result);
+
+      setData({ ...result, implTickets });
       setUsingMock(false);
-    } catch {
+      setLastFetchedAt(new Date());
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      console.error('[useJiraData] API error, falling back to mock data:', err);
       setData(getMockData());
       setUsingMock(true);
     } finally {
@@ -85,13 +108,28 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
     }
   }, [year, month, components, dashboardView, activeTab, isFiltered]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const controller = new AbortController();
+    load(controller.signal);
+    return () => controller.abort();
+  }, [load]);
+
+  const refresh = useCallback(() => {
+    const cacheKey = cache.makeKey(year, month, components);
+    cache.invalidate(cacheKey);
+    const controller = new AbortController();
+    load(controller.signal);
+    return () => controller.abort();
+  }, [load, year, month, components]);
 
   return {
     data,
     loading,
     usingMock,
+    // TODO: migrate to jqlUtils.todayLabel
     todayLabel: moment().tz(EST).format('M/D/YYYY'),
+    lastFetchedAt,
+    refresh,
   };
 }
 
@@ -107,4 +145,3 @@ function getMockData() {
     quarters:          MOCK_QUARTERS,
   };
 }
-

@@ -11,7 +11,6 @@ import {
   monthlyTotalDefectsLink,
   monthlyPriorityLink,
 } from '../../services/jiraLinks';
-import { useAppContext } from '../../hooks/useAppContext';
 import './Tables.scss';
 
 const EST  = 'America/New_York';
@@ -24,10 +23,8 @@ const PRIORITY_DEFS = [
   { key: 'l', jira: 'Low',     color: '#0284c7' },
 ];
 
-export default function DailyMetricsTable({ rows, totals, year, month }) {
-  const { state }  = useAppContext();
-  const components = state.preferences.components;
-  const todayStr   = moment().tz(EST).format('M/D');
+export default function DailyMetricsTable({ rows, totals, year, month, components }) {
+  const todayStr = moment().tz(EST).format('M/D');
 
   return (
     <div className="table-scroll">
@@ -152,8 +149,9 @@ export default function DailyMetricsTable({ rows, totals, year, month }) {
 }
 
 DailyMetricsTable.propTypes = {
-  rows:   PropTypes.arrayOf(PropTypes.object).isRequired,
-  totals: PropTypes.object,
-  year:   PropTypes.string.isRequired,
-  month:  PropTypes.string.isRequired,
+  rows:       PropTypes.arrayOf(PropTypes.object).isRequired,
+  totals:     PropTypes.object,
+  year:       PropTypes.string.isRequired,
+  month:      PropTypes.string.isRequired,
+  components: PropTypes.string,
 };
