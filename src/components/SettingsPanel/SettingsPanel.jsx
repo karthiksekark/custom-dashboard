@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import Modal from '../Modal/Modal';
+import TeamComponentInput from '../TeamComponentInput/TeamComponentInput';
 import { useAppContext } from '../../hooks/useAppContext';
 import { persistPreferences } from '../../context/AppContext';
 import { DEFAULT_PREFERENCES } from '../../context/appReducer';
+import { TEAMS } from '../../config/teams.config';
 import './SettingsPanel.scss';
 
 const GEAR_ICON = (
@@ -19,24 +21,12 @@ const VIEWS = [
     description: 'Show all tabs — Release Management, FED, and Catalog.',
     teamKey:     null,
   },
-  {
-    id:          'release-management',
-    label:       'Release Management',
-    description: 'Show only the Release Management dashboard. Tabs are hidden.',
-    teamKey:     'release-management',
-  },
-  {
-    id:          'fed',
-    label:       'FED',
-    description: 'Show only the FED dashboard. Tabs are hidden.',
-    teamKey:     'fed',
-  },
-  {
-    id:          'catalog',
-    label:       'Catalog',
-    description: 'Show only the Catalog dashboard. Tabs are hidden.',
-    teamKey:     'catalog',
-  },
+  ...TEAMS.map(t => ({
+    id:          t.key,
+    label:       t.label,
+    description: `Show only the ${t.label} dashboard. Tabs are hidden.`,
+    teamKey:     t.key,
+  })),
 ];
 
 export default function SettingsPanel() {
@@ -44,14 +34,13 @@ export default function SettingsPanel() {
   const { preferences }     = state;
   const existing            = preferences.teamComponents || {};
 
-  const [teamComponents, setTeamComponents] = useState({
-    'release-management': existing['release-management'] || '',
-    'fed':                existing['fed']                || '',
-    'catalog':            existing['catalog']            || '',
-  });
-  const [dashboardView, setDashboardView] = useState(preferences.dashboardView || 'default');
-  const [errors,        setErrors]        = useState({});
-  const [saved,         setSaved]         = useState(false);
+  const [teamComponents, setTeamComponents] = useState(
+    Object.fromEntries(TEAMS.map(t => [t.key, existing[t.key] || '']))
+  );
+  const [dashboardView,  setDashboardView]  = useState(preferences.dashboardView || 'default');
+  const [errors,         setErrors]         = useState({});
+  const [saved,          setSaved]          = useState(false);
+  const [confirmReset,   setConfirmReset]   = useState(false);
 
   function handleClose() { dispatch({ type: 'CLOSE_SETTINGS' }); }
 
@@ -63,18 +52,14 @@ export default function SettingsPanel() {
 
   function handleSave() {
     const newErrors = {};
-    ['release-management', 'fed', 'catalog'].forEach(key => {
+    TEAMS.forEach(({ key }) => {
       if (!teamComponents[key].trim()) newErrors[key] = 'Required.';
     });
     if (Object.keys(newErrors).length) { setErrors(newErrors); return; }
 
     const updated = {
       dashboardView,
-      teamComponents: {
-        'release-management': teamComponents['release-management'].trim(),
-        'fed':                teamComponents['fed'].trim(),
-        'catalog':            teamComponents['catalog'].trim(),
-      },
+      teamComponents: Object.fromEntries(TEAMS.map(t => [t.key, teamComponents[t.key].trim()])),
     };
     dispatch({ type: 'SET_PREFERENCES', payload: updated });
     persistPreferences(updated);
@@ -82,12 +67,10 @@ export default function SettingsPanel() {
     setTimeout(() => { setSaved(false); handleClose(); }, 900);
   }
 
-  function handleReset() {
-    setTeamComponents({ 'release-management': '', 'fed': '', 'catalog': '' });
-    setDashboardView('default');
-    setErrors({});
+  function handleResetConfirmed() {
     dispatch({ type: 'RESET_PREFERENCES' });
     persistPreferences(DEFAULT_PREFERENCES);
+    setConfirmReset(false);
     handleClose();
   }
 
@@ -101,7 +84,7 @@ export default function SettingsPanel() {
     >
       <div className="modal-body settings-panel">
 
-        {/* ── Dashboard View + per-team component fields ── */}
+        {/* ── Dashboard View ── */}
         <div>
           <span className="modal-body__label">Dashboard View</span>
           <div className="settings-panel__views">
@@ -127,17 +110,13 @@ export default function SettingsPanel() {
                       className="settings-panel__comp-field"
                       onClick={e => e.stopPropagation()}
                     >
-                      <input
-                        type="text"
-                        className={`settings-panel__comp-input${errors[v.teamKey] ? ' settings-panel__comp-input--error' : ''}`}
-                        placeholder="e.g. Payments, Auth, Core API"
+                      <TeamComponentInput
+                        id={`sp-${v.teamKey}`}
+                        label={v.label}
                         value={teamComponents[v.teamKey]}
-                        onChange={e => handleCompChange(v.teamKey, e.target.value)}
+                        error={errors[v.teamKey]}
+                        onChange={val => handleCompChange(v.teamKey, val)}
                       />
-                      {errors[v.teamKey]
-                        ? <span className="settings-panel__comp-error">{errors[v.teamKey]}</span>
-                        : <span className="settings-panel__comp-hint">Comma-separated component names</span>
-                      }
                     </div>
                   )}
                 </div>
@@ -146,18 +125,34 @@ export default function SettingsPanel() {
           </div>
         </div>
 
-        {/* ── Actions ── */}
-        <div className="modal-body__actions settings-panel__actions">
-          <button className="btn btn--danger" onClick={handleReset}>
-            Reset to Defaults
-          </button>
-          <button
-            className={`btn btn--primary${saved ? ' settings-panel__btn--saved' : ''}`}
-            onClick={handleSave}
-          >
-            {saved ? '✓ Saved' : 'Save Settings'}
-          </button>
-        </div>
+        {/* ── Reset confirmation ── */}
+        {confirmReset ? (
+          <div className="settings-panel__confirm">
+            <p className="settings-panel__confirm-text">
+              Reset all settings to defaults? This cannot be undone.
+            </p>
+            <div className="settings-panel__confirm-actions">
+              <button className="btn btn--ghost" onClick={() => setConfirmReset(false)}>
+                Cancel
+              </button>
+              <button className="btn btn--danger" onClick={handleResetConfirmed}>
+                Yes, Reset
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="modal-body__actions settings-panel__actions">
+            <button className="btn btn--ghost" onClick={() => setConfirmReset(true)}>
+              Reset to Defaults
+            </button>
+            <button
+              className={`btn btn--primary${saved ? ' settings-panel__btn--saved' : ''}`}
+              onClick={handleSave}
+            >
+              {saved ? '✓ Saved' : 'Save Settings'}
+            </button>
+          </div>
+        )}
       </div>
     </Modal>
   );

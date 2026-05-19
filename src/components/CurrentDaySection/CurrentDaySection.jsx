@@ -160,10 +160,29 @@ function PriorityPanel({ title, data }) {
   );
 }
 
-export default function CurrentDaySection({ data, todayLabel }) {
+export default function CurrentDaySection({ data, todayLabel, lastFetchedAt, onRefresh }) {
+  const fetchedLabel = lastFetchedAt
+    ? `Updated ${lastFetchedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+    : null;
+
   return (
     <Card>
-      <SectionHeader eyebrow="Current Day" title={`Defects vs Tickets — ${todayLabel}`} />
+      <div className="cds__header-row">
+        <SectionHeader eyebrow="Current Day" title={`Defects vs Tickets — ${todayLabel}`} />
+        <div className="cds__header-actions">
+          {fetchedLabel && <span className="cds__freshness">{fetchedLabel}</span>}
+          {onRefresh && (
+            <button
+              className="cds__refresh-btn"
+              onClick={onRefresh}
+              aria-label="Refresh current day data"
+              title="Refresh"
+            >
+              ↻
+            </button>
+          )}
+        </div>
+      </div>
       <div className="cds__grid">
         <ImplPanel     data={data.impl} />
         <PriorityPanel title="Defects by Priority"            data={data.defects}    />
@@ -179,5 +198,7 @@ CurrentDaySection.propTypes = {
     defects:    PropTypes.array.isRequired,
     regression: PropTypes.array.isRequired,
   }).isRequired,
-  todayLabel: PropTypes.string.isRequired,
+  todayLabel:    PropTypes.string.isRequired,
+  lastFetchedAt: PropTypes.instanceOf(Date),
+  onRefresh:     PropTypes.func,
 };

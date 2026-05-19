@@ -119,7 +119,7 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
   const refresh = useCallback(() => {
     // Invalidate cache so the next load fetches fresh data
     const cacheKey = cache.makeKey(year, month, components);
-    cache.del(cacheKey);
+    cache.invalidate(cacheKey);
     // Trigger re-load by changing a stable ref — re-invoking load directly
     const controller = new AbortController();
     load(controller.signal);

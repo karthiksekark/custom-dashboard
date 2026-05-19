@@ -1,17 +1,19 @@
 import PropTypes from 'prop-types';
+import { TEAMS } from '../../config/teams.config';
 import './Tabs.scss';
 
-const TABS = ['Release Management', 'FED', 'Catalog'];
+const TAB_LABELS = TEAMS.map(t => t.label);
 
 export default function Tabs({ active, onChange }) {
   return (
-    <nav className="tabs" role="tablist">
+    <nav className="tabs" role="tablist" aria-label="Dashboard sections">
       <div className="tabs__inner">
-        {TABS.map(tab => (
+        {TAB_LABELS.map(tab => (
           <button
             key={tab}
             role="tab"
             aria-selected={active === tab}
+            tabIndex={active === tab ? 0 : -1}
             className={`tabs__item${active === tab ? ' tabs__item--active' : ''}`}
             onClick={() => onChange(tab)}
           >

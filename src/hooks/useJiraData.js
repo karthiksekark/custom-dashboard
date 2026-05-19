@@ -116,7 +116,7 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
 
   const refresh = useCallback(() => {
     const cacheKey = cache.makeKey(year, month, components);
-    cache.del(cacheKey);
+    cache.invalidate(cacheKey);
     const controller = new AbortController();
     load(controller.signal);
     return () => controller.abort();
