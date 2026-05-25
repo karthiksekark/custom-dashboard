@@ -18,8 +18,6 @@ export default function TabQuarterCard({ quarter, isActive, components }) {
   const empty = days === 0;
   const hc    = healthColor(hs);
 
-  const pct = (num, denom) => (!empty && denom > 0) ? Math.round((num / denom) * 100) : null;
-
   let quarterProgress = null;
   if (isActive && !empty && startDate && endDate) {
     const start   = moment.tz(startDate, EST);
@@ -31,16 +29,16 @@ export default function TabQuarterCard({ quarter, isActive, components }) {
   }
 
   const rows = [
-    { label: 'Release Days',       val: empty ? '—' : days,    pct: null,                     link: null,                                                           color: null       },
-    { label: 'Total Tickets',      val: empty ? '—' : tickets, pct: null,                     link: quarterTotalTicketsLink(startDate, endDate, components),         color: '#334155'  },
-    { label: 'Total Defects',      val: empty ? '—' : defects, pct: pct(defects, tickets),    link: quarterTotalDefectsLink(startDate, endDate, components),         color: '#334155'  },
-    { label: 'Regression Defects', val: empty ? '—' : rg,      pct: pct(rg, tickets),         link: tabQuarterRegressionLink(startDate, endDate, components),        color: '#7c3aed'  },
-    { label: 'Fast-Path Tickets',  val: empty ? '—' : fp,      pct: pct(fp, tickets),         link: tabQuarterFastPathLink(startDate, endDate, components),          color: '#0369a1'  },
-    { label: 'Critical',           val: empty ? '—' : c,       pct: pct(c, defects),          link: quarterPriorityLink(startDate, endDate, 'Critical', components), color: '#dc2626'  },
-    { label: 'High',               val: empty ? '—' : h,       pct: pct(h, defects),          link: quarterPriorityLink(startDate, endDate, 'High', components),     color: '#ea580c'  },
-    { label: 'Medium',             val: empty ? '—' : m,       pct: pct(m, defects),          link: quarterPriorityLink(startDate, endDate, 'Medium', components),   color: '#ca8a04'  },
-    { label: 'Low',                val: empty ? '—' : l,       pct: pct(l, defects),          link: quarterPriorityLink(startDate, endDate, 'Low', components),      color: '#0284c7'  },
-    { label: 'Avg. Health',        val: empty ? '—' : hs,      pct: null,                     link: null,                                                           color: hc         },
+    { label: 'Release Days',       val: empty ? '—' : days,    link: null,                                                       color: null       },
+    { label: 'Total Tickets',      val: empty ? '—' : tickets, link: quarterTotalTicketsLink(startDate, endDate, components),     color: '#334155'  },
+    { label: 'Total Defects',      val: empty ? '—' : defects, link: quarterTotalDefectsLink(startDate, endDate, components),     color: '#334155'  },
+    { label: 'Regression Defects', val: empty ? '—' : rg,      link: tabQuarterRegressionLink(startDate, endDate, components),   color: '#7c3aed'  },
+    { label: 'Fast-Path Tickets',  val: empty ? '—' : fp,      link: tabQuarterFastPathLink(startDate, endDate, components),     color: '#0369a1'  },
+    { label: 'Critical',           val: empty ? '—' : c,       link: quarterPriorityLink(startDate, endDate, 'Critical', components), color: '#dc2626' },
+    { label: 'High',               val: empty ? '—' : h,       link: quarterPriorityLink(startDate, endDate, 'High', components),    color: '#ea580c' },
+    { label: 'Medium',             val: empty ? '—' : m,       link: quarterPriorityLink(startDate, endDate, 'Medium', components),  color: '#ca8a04' },
+    { label: 'Low',                val: empty ? '—' : l,       link: quarterPriorityLink(startDate, endDate, 'Low', components),     color: '#0284c7' },
+    { label: 'Avg. Health',        val: empty ? '—' : hs,      link: null,                                                       color: hc         },
   ];
 
   const cls = [
@@ -70,7 +68,7 @@ export default function TabQuarterCard({ quarter, isActive, components }) {
         </div>
       )}
 
-      {rows.map(({ label, val, pct, link, color }, i) => (
+      {rows.map(({ label, val, link, color }, i) => (
         <div key={label} className={`tqc__row${i % 2 ? '' : ' tqc__row--alt'}`}>
           <span className="tqc__label">{label}</span>
 
@@ -82,19 +80,14 @@ export default function TabQuarterCard({ quarter, isActive, components }) {
               <span className="tqc__health-val">{val}</span>
             </div>
           ) : (
-            <div className="tqc__val-group">
-              <JiraLink href={!empty ? link : null}>
-                <span
-                  className="tqc__val"
-                  style={!empty && color ? { color, fontWeight: 600 } : {}}
-                >
-                  {val}
-                </span>
-              </JiraLink>
-              {pct != null && (
-                <span className="tqc__pct">{pct}%</span>
-              )}
-            </div>
+            <JiraLink href={!empty ? link : null}>
+              <span
+                className="tqc__val"
+                style={!empty && color ? { color, fontWeight: 600 } : {}}
+              >
+                {val}
+              </span>
+            </JiraLink>
           )}
         </div>
       ))}
