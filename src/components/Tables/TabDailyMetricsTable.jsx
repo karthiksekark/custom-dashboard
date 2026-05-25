@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import moment from 'moment-timezone';
 import Chip from '../Chip/Chip';
@@ -17,6 +18,7 @@ import {
   tabMonthlyFastPathLink,
   tabMonthlyDirectPubLink,
 } from '../../services/jiraLinks';
+import { groupByWeek } from '../../utils/weeklyRollup';
 import './Tables.scss';
 
 function Sparkline({ values, color = '#0284c7', width = 120, height = 28 }) {
@@ -60,49 +62,146 @@ const HEADER_TOOLTIPS = {
   'Health Score': 'Calculated as (Tickets − Defects) / Tickets × 100',
 };
 
-function ThCell({ label }) {
-  const tip = HEADER_TOOLTIPS[label];
+const COL_SORT = {
+  'Date': 'date', 'Total Defects': 'd',
+  'Critical': 'c', 'High': 'h', 'Medium': 'm', 'Low': 'l',
+  'Regression': 'rg', 'Total Tickets': 't',
+  'Fast-Path': 'fp', 'Direct-Pub': 'dp', 'Health Score': 'hs',
+};
+
+const HEADERS = [
+  'Date', 'Total Defects', 'Critical', 'High', 'Medium', 'Low',
+  'Regression', 'Total Tickets', 'Fast-Path', 'Direct-Pub', 'Health Score',
+];
+
+function sortRows(rows, key, dir) {
+  return [...rows].sort((a, b) => {
+    let va, vb;
+    if (key === 'date') {
+      const [am, ad] = (a.date || '0/0').split('/').map(Number);
+      const [bm, bd] = (b.date || '0/0').split('/').map(Number);
+      va = am * 100 + ad;
+      vb = bm * 100 + bd;
+    } else {
+      va = a[key] ?? -1;
+      vb = b[key] ?? -1;
+    }
+    return dir === 'asc' ? va - vb : vb - va;
+  });
+}
+
+function ThCell({ label, colSortKey, activeSortKey, sortDir, onSort }) {
+  const tip      = HEADER_TOOLTIPS[label];
+  const isSorted = activeSortKey === colSortKey;
+  const indicator = isSorted ? (sortDir === 'asc' ? '↑' : '↓') : '↕';
+
   return (
-    <th className="data-table__th">
+    <th
+      className={`data-table__th${colSortKey ? ' data-table__th--sortable' : ''}`}
+      onClick={colSortKey ? () => onSort(colSortKey) : undefined}
+      aria-sort={colSortKey ? (isSorted ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none') : undefined}
+    >
       {tip ? (
         <span className="th-tip">
           {label} <span className="th-tip__icon">ⓘ</span>
           <span className="th-tip__text">{tip}</span>
         </span>
       ) : label}
+      {colSortKey && (
+        <span className={`sort-icon${isSorted ? ' sort-icon--active' : ''}`}>
+          {indicator}
+        </span>
+      )}
     </th>
   );
 }
 
 ThCell.propTypes = {
-  label: PropTypes.string.isRequired,
+  label:         PropTypes.string.isRequired,
+  colSortKey:    PropTypes.string,
+  activeSortKey: PropTypes.string,
+  sortDir:       PropTypes.string,
+  onSort:        PropTypes.func,
 };
 
 export default function TabDailyMetricsTable({ rows, totals, year, month, components }) {
   const todayStr = moment().tz(EST).format('M/D');
+  const [sortKey, setSortKey] = useState(null);
+  const [sortDir, setSortDir] = useState(null);
 
-  const headers = [
-    'Date', 'Total Defects', 'Critical', 'High', 'Medium', 'Low',
-    'Regression', 'Total Tickets', 'Fast-Path', 'Direct-Pub', 'Health Score',
-  ];
+  function handleSort(key) {
+    if (sortKey === key) {
+      if (sortDir === 'asc') { setSortDir('desc'); }
+      else                   { setSortKey(null); setSortDir(null); }
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  }
+
+  const displayRows = useMemo(() => {
+    if (sortKey) return sortRows(rows, sortKey, sortDir);
+    return groupByWeek(rows, year);
+  }, [rows, sortKey, sortDir, year]);
+
+  let dataIdx = 0;
 
   return (
     <div className="table-scroll">
       <table className="data-table">
         <thead>
           <tr className="data-table__head-row">
-            {headers.map((h) => (
-              <ThCell key={h} label={h} />
+            {HEADERS.map(h => (
+              <ThCell
+                key={h}
+                label={h}
+                colSortKey={COL_SORT[h]}
+                activeSortKey={sortKey}
+                sortDir={sortDir}
+                onSort={handleSort}
+              />
             ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => {
+          {displayRows.map((r, i) => {
+            if (r.isRollup) {
+              return (
+                <tr key={`rollup-${i}`} className="data-table__row data-table__row--week-rollup wr">
+                  <td className="data-table__td data-table__td--date">
+                    <span className="week-rollup-label">{r.label}</span>
+                  </td>
+                  <td className="data-table__td data-table__td--num">{r.d || '—'}</td>
+                  {PRIORITY_DEFS.map(p => (
+                    <td key={p.key} className="data-table__td data-table__td--center">
+                      <Chip value={r[p.key] || null} color={p.color} />
+                    </td>
+                  ))}
+                  <td className="data-table__td data-table__td--center">
+                    <Chip value={r.rg || null} color="#7c3aed" />
+                  </td>
+                  <td className="data-table__td data-table__td--num">{r.t || '—'}</td>
+                  <td className="data-table__td data-table__td--center">
+                    <Chip value={r.fp || null} color="#0369a1" />
+                  </td>
+                  <td className="data-table__td data-table__td--center">
+                    <Chip value={r.dp || null} color="#16a34a" />
+                  </td>
+                  <td className="data-table__td data-table__td--health">
+                    {r.hs != null ? (
+                      <span style={{ fontWeight: 600, color: healthColor(r.hs) }}>{r.hs}</span>
+                    ) : '—'}
+                  </td>
+                </tr>
+              );
+            }
+
             const hc      = healthColor(r.hs);
             const isToday = r.date === todayStr;
+            const rowIdx  = dataIdx++;
             const rowCls  = [
               'data-table__row wr',
-              i % 2 ? '' : 'data-table__row--alt',
+              rowIdx % 2 ? '' : 'data-table__row--alt',
               isToday ? 'data-table__row--today' : '',
             ].filter(Boolean).join(' ');
 
@@ -215,7 +314,27 @@ export default function TabDailyMetricsTable({ rows, totals, year, month, compon
 
       {/* ── Mobile card layout ── */}
       <div className="card-list">
-        {rows.map((r, i) => {
+        {displayRows.map((r, i) => {
+          if (r.isRollup) {
+            return (
+              <div key={`rollup-card-${i}`} className="card-list__item card-list__item--week-rollup">
+                <div className="card-list__title">↳ {r.label}</div>
+                <div className="card-list__row">
+                  <span className="card-list__key">Total Tickets</span>
+                  <span>{r.t || '—'}</span>
+                </div>
+                <div className="card-list__row">
+                  <span className="card-list__key">Total Defects</span>
+                  <span>{r.d || '—'}</span>
+                </div>
+                <div className="card-list__row">
+                  <span className="card-list__key">Avg Health</span>
+                  <span style={{ fontWeight: 600, color: healthColor(r.hs) }}>{r.hs ?? '—'}</span>
+                </div>
+              </div>
+            );
+          }
+
           const hc      = healthColor(r.hs);
           const isToday = r.date === todayStr;
           return (
