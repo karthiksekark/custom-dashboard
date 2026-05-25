@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import moment from 'moment-timezone';
 import * as api from '../services/jiraApi';
 import * as cache from '../services/cache';
@@ -26,6 +26,7 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
   const [usingMock,     setUsingMock]     = useState(false);
   const [phase1Done,    setPhase1Done]    = useState(false);
   const [lastFetchedAt, setLastFetchedAt] = useState(null);
+  const refreshControllerRef             = useRef(null);
 
   const load = useCallback(async (signal) => {
     setLoading(true);
@@ -117,13 +118,13 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
   }, [load]);
 
   const refresh = useCallback(() => {
-    // Invalidate cache so the next load fetches fresh data
-    const cacheKey = cache.makeKey(year, month, components);
-    cache.invalidate(cacheKey);
-    // Trigger re-load by changing a stable ref — re-invoking load directly
+    // Abort any in-flight refresh before starting a new one
+    refreshControllerRef.current?.abort();
     const controller = new AbortController();
+    refreshControllerRef.current = controller;
+
+    cache.invalidate(cache.makeKey(year, month, components));
     load(controller.signal);
-    return () => controller.abort();
   }, [load, year, month, components]);
 
   return {
