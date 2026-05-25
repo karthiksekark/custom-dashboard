@@ -84,15 +84,35 @@ export default function PieChartPanel({ title, data, colors }) {
     };
   }, [data, colors, isEmpty]);
 
+  const total = data.reduce((s, d) => s + d.value, 0);
+
   return (
     <div className="chart-panel">
       <div className="chart-panel__title">{title}</div>
-      <div className="chart-panel__canvas chart-panel__canvas--with-legend">
+      <div
+        className="chart-panel__canvas chart-panel__canvas--with-legend"
+        role="img"
+        aria-label={`${title} pie chart`}
+      >
         {isEmpty
           ? <span className="chart-panel__empty">No data to display</span>
-          : <canvas ref={canvasRef} />
+          : <canvas ref={canvasRef} aria-hidden="true" />
         }
       </div>
+      {!isEmpty && (
+        <table className="sr-only" aria-label={`${title} data`}>
+          <thead><tr><th>Category</th><th>Count</th><th>Percentage</th></tr></thead>
+          <tbody>
+            {data.map(d => (
+              <tr key={d.name}>
+                <td>{d.name}</td>
+                <td>{d.value}</td>
+                <td>{total ? `${Math.round((d.value / total) * 100)}%` : '0%'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }
