@@ -3,8 +3,9 @@ import moment from 'moment-timezone';
 import * as api from '../services/jiraApi';
 import * as cache from '../services/cache';
 
-const JIRA_CONFIGURED = !!import.meta.env.VITE_JIRA_BASE_URL;
-const EST             = 'America/New_York';
+const JIRA_CONFIGURED    = !!import.meta.env.VITE_JIRA_BASE_URL;
+const EST                = 'America/New_York';
+const AUTO_REFRESH_MS    = 2 * 60 * 1000;
 
 function createEmptyData(rcLabels) {
   const emptyRC = Object.fromEntries((rcLabels || []).map(l => [l, { Critical: 0, High: 0, Medium: 0, Low: 0 }]));
@@ -28,9 +29,11 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
   const [lastFetchedAt, setLastFetchedAt] = useState(null);
   const refreshControllerRef             = useRef(null);
 
-  const load = useCallback(async (signal) => {
-    setLoading(true);
-    setPhase1Done(false);
+  const load = useCallback(async (signal, { silent = false } = {}) => {
+    if (!silent) {
+      setLoading(true);
+      setPhase1Done(false);
+    }
 
     if (!JIRA_CONFIGURED) {
       setData(mockData);
@@ -114,8 +117,17 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
   useEffect(() => {
     const controller = new AbortController();
     load(controller.signal);
-    return () => controller.abort();
-  }, [load]);
+
+    const interval = setInterval(() => {
+      cache.invalidate(cache.makeKey(year, month, components));
+      load(controller.signal, { silent: true });
+    }, AUTO_REFRESH_MS);
+
+    return () => {
+      controller.abort();
+      clearInterval(interval);
+    };
+  }, [load, year, month, components]);
 
   const refresh = useCallback(() => {
     // Abort any in-flight refresh before starting a new one
