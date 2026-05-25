@@ -2,7 +2,7 @@
  * Simple in-memory TTL cache for JIRA API responses.
  * Keyed by period + components. Default TTL: 2 minutes.
  */
-const DEFAULT_TTL_MS = 2 * 60 * 1000;
+export const DEFAULT_TTL_MS = 2 * 60 * 1000;
 
 const store = new Map();
 

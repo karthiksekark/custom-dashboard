@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as api from '../services/jiraApi';
 import * as cache from '../services/cache';
+import { DEFAULT_TTL_MS } from '../services/cache';
 import { useAppContext } from './useAppContext';
 import { todayLabel } from '../utils/jqlUtils';
 import {
@@ -98,7 +99,7 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
       };
 
       // Cache monthly/quarterly results (TTL: default 2 minutes, per cache.js implementation)
-      cache.set(cacheKey, result);
+      cache.set(cacheKey, result, refreshIntervalMs ?? DEFAULT_TTL_MS);
 
       setData({ ...result, implTickets });
       setUsingMock(false);
@@ -116,7 +117,7 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
     } finally {
       setLoading(false);
     }
-  }, [year, month, components, dashboardView, activeTab, isFiltered]);
+  }, [year, month, components, dashboardView, activeTab, isFiltered, refreshIntervalMs]);
 
   useEffect(() => {
     const controller = new AbortController();

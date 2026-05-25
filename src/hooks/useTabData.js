@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as api from '../services/jiraApi';
 import * as cache from '../services/cache';
+import { DEFAULT_TTL_MS } from '../services/cache';
 import { useAppContext } from './useAppContext';
 import { todayLabel } from '../utils/jqlUtils';
 
@@ -97,7 +98,7 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
       const monthly = { healthScore, defectsByPriority };
 
       // Cache phase 2 results (exclude current-day data — always keep fresh)
-      cache.set(cacheKey, { rootCause, monthly, dailyMetrics, quarters });
+      cache.set(cacheKey, { rootCause, monthly, dailyMetrics, quarters }, refreshIntervalMs ?? DEFAULT_TTL_MS);
 
       setData(prev => ({
         ...prev,
@@ -120,7 +121,7 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
     } finally {
       setLoading(false);
     }
-  }, [year, month, components, rcLabels, mockData, dashboardView, activeTab, isFiltered]);
+  }, [year, month, components, rcLabels, mockData, dashboardView, activeTab, isFiltered, refreshIntervalMs]);
 
   useEffect(() => {
     const controller = new AbortController();
