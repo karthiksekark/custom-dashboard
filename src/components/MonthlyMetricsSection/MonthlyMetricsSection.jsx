@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { useCountUp } from '../../hooks/useCountUp';
 import { Chart, PieController, ArcElement, Tooltip, Legend } from 'chart.js';
 import Card from '../Card/Card';
 import SectionHeader from '../SectionHeader/SectionHeader';
@@ -128,6 +129,8 @@ export default function MonthlyMetricsSection({
   const total            = (defectsByPriority || []).reduce((s, d) => s + d.value, 0);
   const currDefectsTotal = (defectsByPriority || []).reduce((s, d) => s + (d.value || 0), 0);
   const hc               = healthColor(healthScore);
+  const animatedScore    = useCountUp(healthScore);
+  const animatedTotal    = useCountUp(total);
 
   return (
     <Card>
@@ -140,7 +143,7 @@ export default function MonthlyMetricsSection({
           <div className="mms__health-body">
             <DoughnutGauge score={healthScore} />
             <div className="mms__health-badge" style={{ '--hc': hc }}>
-              {healthScore != null ? `${healthScore}/100` : 'No data'}
+              {healthScore != null ? `${animatedScore ?? healthScore}/100` : 'No data'}
             </div>
             <TrendBadge current={healthScore} prev={prevHealthScore} />
           </div>
@@ -182,7 +185,7 @@ export default function MonthlyMetricsSection({
                 <td>Total</td>
                 <td>
                   {total
-                    ? <span className="mms__total">{total}</span>
+                    ? <span className="mms__total">{animatedTotal ?? total}</span>
                     : <span className="mms__dash">–</span>}
                   <TrendBadge current={currDefectsTotal} prev={prevDefectsTotal} inverseColor />
                 </td>

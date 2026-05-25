@@ -33,14 +33,11 @@
     background: white !important;
   }
 
-  // Ensure text is black
-  * {
-    color: #000 !important;
+  // Strip decorative backgrounds but preserve text color (health scores, priorities use inline color)
+  .card,
+  .skeleton,
+  .tab-page,
+  .release-mgmt {
     background: transparent !important;
-  }
-
-  // But keep colored values (health scores, priorities)
-  [style*="color"] {
-    // let inline styles through
   }
 }
