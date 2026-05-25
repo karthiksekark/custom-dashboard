@@ -28,15 +28,15 @@ export default function TabPage({
     dashboardView, activeTab, isFiltered,
   });
 
-  const toast = useToast();
+  const { show: showToast } = useToast();
   const hasLoadedRef = useRef(false);
 
   useEffect(() => {
     if (lastFetchedAt) {
-      if (hasLoadedRef.current) toast.show('Data refreshed');
+      if (hasLoadedRef.current) showToast('Data refreshed');
       else hasLoadedRef.current = true;
     }
-  }, [lastFetchedAt]);
+  }, [lastFetchedAt, showToast]);
 
   if (loading && !phase1Done) {
     return (

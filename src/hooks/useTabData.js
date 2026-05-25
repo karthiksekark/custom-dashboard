@@ -52,6 +52,7 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
     }
 
     const ctx = { dashboardView, activeTab, isFiltered, signal };
+    let stale = null; // declared outside try so catch block can access it
 
     try {
       // ── Phase 1: fast — current-day data (3 calls) ────────────────────────
@@ -70,7 +71,7 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
 
       // ── Phase 2: slow — monthly + quarterly data, check cache first ────────
       const cached = cache.get(cacheKey);
-      let stale = !cached ? cache.getStale(cacheKey) : null;
+      stale = !cached ? cache.getStale(cacheKey) : null;
 
       if (cached) {
         setData(prev => ({ ...prev, ...cached }));

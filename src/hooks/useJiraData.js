@@ -66,11 +66,12 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
     }
 
     const ctx = { dashboardView, activeTab, isFiltered, signal };
+    let stale = null; // declared outside try so catch block can access it
 
     try {
       // Check cache for the monthly/quarterly data (implTickets is always today's — never cached)
       const cached = cache.get(cacheKey);
-      let stale = !cached ? cache.getStale(cacheKey) : null;
+      stale = !cached ? cache.getStale(cacheKey) : null;
 
       // Always fetch implTickets fresh (today's data)
       const implTickets = await api.fetchImplTickets(ctx);

@@ -1,5 +1,17 @@
 import PropTypes from 'prop-types';
 import moment from 'moment-timezone';
+import Chip from '../Chip/Chip';
+import JiraLink from '../JiraLink/JiraLink';
+import { healthColor } from '../../services/healthUtils';
+import {
+  dailyTotalTicketsLink,
+  dailyTotalDefectsLink,
+  dailyPriorityLink,
+  monthlyTotalTicketsLink,
+  monthlyTotalDefectsLink,
+  monthlyPriorityLink,
+} from '../../services/jiraLinks';
+import './Tables.scss';
 
 function Sparkline({ values, color = '#0284c7', width = 120, height = 28 }) {
   const nums = (values || []).filter(v => v != null && !isNaN(v));
@@ -14,29 +26,10 @@ function Sparkline({ values, color = '#0284c7', width = 120, height = 28 }) {
   }).join(' ');
   return (
     <svg width={width} height={height} aria-hidden="true" style={{ display: 'block' }}>
-      <polyline
-        points={pts}
-        fill="none"
-        stroke={color}
-        strokeWidth={1.5}
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
+      <polyline points={pts} fill="none" stroke={color} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );
 }
-import Chip from '../Chip/Chip';
-import JiraLink from '../JiraLink/JiraLink';
-import { healthColor } from '../../services/healthUtils';
-import {
-  dailyTotalTicketsLink,
-  dailyTotalDefectsLink,
-  dailyPriorityLink,
-  monthlyTotalTicketsLink,
-  monthlyTotalDefectsLink,
-  monthlyPriorityLink,
-} from '../../services/jiraLinks';
-import './Tables.scss';
 
 const EST  = 'America/New_York';
 const COLS = ['Release Date', 'Total Tickets', 'Total Defects', 'Critical', 'High', 'Medium', 'Low', 'Health Score'];

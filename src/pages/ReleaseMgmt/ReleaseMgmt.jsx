@@ -34,15 +34,15 @@ function quarterDateRange(yearStr, qIndex) {
 export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, dashboardView, activeTab, isFiltered }) {
   const { data, loading, error, usingMock, lastFetchedAt, refresh } = useJiraData({ year, month, components, dashboardView, activeTab, isFiltered });
 
-  const toast = useToast();
+  const { show: showToast } = useToast();
   const hasLoadedRef = useRef(false);
 
   useEffect(() => {
     if (lastFetchedAt) {
-      if (hasLoadedRef.current) toast.show('Data refreshed');
+      if (hasLoadedRef.current) showToast('Data refreshed');
       else hasLoadedRef.current = true;
     }
-  }, [lastFetchedAt]);
+  }, [lastFetchedAt, showToast]);
 
   // ── Derived date values (all EST) ──────────────────────────────────────────
   const todayMoment  = moment().tz(EST);
