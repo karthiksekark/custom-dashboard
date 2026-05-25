@@ -36,6 +36,7 @@ function createEmptyRMData() {
     implTickets:       [],
     defectsTable:      [],
     quarters:          [],
+    prevPeriod:        { healthScore: null, defectsTotal: null },
   };
 }
 
@@ -46,6 +47,7 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
   const [data,      setData]      = useState(createEmptyRMData);
   const [loading,   setLoading]   = useState(true);
   const [usingMock, setUsingMock] = useState(false);
+  const [error,     setError]     = useState(null);
 
   // Refs so load can call markFetched and read refreshIntervalMs without extra deps
   const markFetchedRef       = useRef(null);

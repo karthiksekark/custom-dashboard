@@ -33,7 +33,6 @@ export function useBaseData({ load, cacheKey, deps = [] }) {
 
     const interval = refreshIntervalMs
       ? setInterval(() => {
-          cache.invalidate(cacheKey);
           load(controller.signal, { silent: true });
         }, refreshIntervalMs)
       : null;

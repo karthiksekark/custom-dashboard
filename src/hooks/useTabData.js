@@ -19,6 +19,7 @@ function createEmptyData(rcLabels) {
     monthly: { healthScore: null, defectsByPriority: [] },
     dailyMetrics: { rows: [], totals: { t: 0, d: 0, c: 0, h: 0, m: 0, l: 0, rg: 0, fp: 0, dp: 0, hs: null } },
     quarters: [],
+    prevPeriod: { healthScore: null, defectsTotal: null },
   };
 }
 
@@ -29,6 +30,7 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
   const [loading,    setLoading]    = useState(true);
   const [usingMock,  setUsingMock]  = useState(false);
   const [phase1Done, setPhase1Done] = useState(false);
+  const [error,      setError]      = useState(null);
 
   // Refs so load can call markFetched and read refreshIntervalMs without extra deps
   const markFetchedRef      = useRef(null);
@@ -68,12 +70,20 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
 
       // ── Phase 2: slow — monthly + quarterly data, check cache first ────────
       const cached = cache.get(cacheKey);
+      let stale = !cached ? cache.getStale(cacheKey) : null;
+
       if (cached) {
         setData(prev => ({ ...prev, ...cached }));
+        setError(null);
         markFetchedRef.current?.();
         setLoading(false);
         setUsingMock(false);
         return;
+      }
+      if (stale) {
+        // Show stale data immediately (no spinner), continue fetching fresh below
+        setData(prev => ({ ...prev, ...stale }));
+        setLoading(false);
       }
 
       const [
@@ -81,6 +91,7 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
         monthlyDefectsByRC, monthlyRegressionByRC,
         healthScore, defectsByPriority,
         dailyMetrics, quarters,
+        prevHealthScore, prevDefectsTotal,
       ] = await Promise.all([
         api.fetchTodayDefectsByRootCause(components, rcLabels, ctx),
         api.fetchTodayRegressionByRootCause(components, rcLabels, ctx),
@@ -90,6 +101,8 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
         api.fetchDefectsByPriority(year, month, components, ctx),
         api.fetchTabDailyMetrics(year, month, components, ctx),
         api.fetchTabQuarters(year, components, ctx),
+        api.fetchPrevMonthHealthScore(year, month, components, ctx),
+        api.fetchPrevMonthDefectsTotal(year, month, components, ctx),
       ]);
 
       const rootCause = {
@@ -99,7 +112,7 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
       const monthly = { healthScore, defectsByPriority };
 
       // Cache phase 2 results (exclude current-day data — always keep fresh)
-      cache.set(cacheKey, { rootCause, monthly, dailyMetrics, quarters }, refreshIntervalMsRef.current ?? DEFAULT_TTL_MS);
+      cache.set(cacheKey, { rootCause, monthly, dailyMetrics, quarters, prevPeriod: { healthScore: prevHealthScore, defectsTotal: prevDefectsTotal } }, refreshIntervalMsRef.current ?? DEFAULT_TTL_MS);
 
       setData(prev => ({
         ...prev,
@@ -107,8 +120,10 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
         monthly,
         dailyMetrics,
         quarters,
+        prevPeriod: { healthScore: prevHealthScore, defectsTotal: prevDefectsTotal },
       }));
       setUsingMock(false);
+      setError(null);
       markFetchedRef.current?.();
     } catch (err) {
       if (err.name === 'AbortError') return;
@@ -116,9 +131,13 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
         console.error('[useTabData] Auth/permission error:', err.message);
         throw err;
       }
-      console.error('[useTabData] API error, falling back to mock data:', err);
-      setData(mockData);
-      setUsingMock(true);
+      console.error('[useTabData] API error:', err);
+      setError(err.message || 'Failed to load data');
+      // Only fall back to mock if we have no real data yet (first load)
+      if (!stale) {
+        setData(mockData);
+        setUsingMock(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -139,6 +158,7 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
     loading,
     phase1Done,
     usingMock,
+    error,
     todayLabel: todayLabel(),
     lastFetchedAt,
     refresh,

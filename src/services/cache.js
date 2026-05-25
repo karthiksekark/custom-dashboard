@@ -20,8 +20,12 @@ export function has(key) {
 export function get(key) {
   const entry = store.get(key);
   if (!entry) return undefined;
-  if (Date.now() > entry.expiresAt) { store.delete(key); return undefined; }
+  if (Date.now() > entry.expiresAt) return undefined;
   return entry.value;
+}
+
+export function getStale(key) {
+  return store.get(key)?.value;
 }
 
 export function set(key, value, ttlMs = DEFAULT_TTL_MS) {
