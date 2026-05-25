@@ -70,25 +70,33 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
     try {
       // Check cache for the monthly/quarterly data (implTickets is always today's — never cached)
       const cached = cache.get(cacheKey);
+      let stale = !cached ? cache.getStale(cacheKey) : null;
 
       // Always fetch implTickets fresh (today's data)
       const implTickets = await api.fetchImplTickets(ctx);
 
       if (cached) {
         setData({ ...cached, implTickets });
+        setError(null);
         markFetchedRef.current?.();
         setLoading(false);
         setUsingMock(false);
         return;
       }
+      if (stale) {
+        setData({ ...stale, implTickets });
+        setLoading(false);
+      }
 
-      const [priority, status, daily, health, defectsTable, quarters] = await Promise.all([
+      const [priority, status, daily, health, defectsTable, quarters, prevHealthScore, prevDefectsTotal] = await Promise.all([
         api.fetchDefectsByPriority(year, month, components, ctx),
         api.fetchDefectsByStatus(year, month, components, ctx),
         api.fetchDailyMetrics(year, month, components, ctx),
         api.fetchHealthScore(year, month, components, ctx),
         api.fetchDefectsAlertTable(components, ctx),
         api.fetchTabQuarters(year, components, ctx),
+        api.fetchPrevMonthHealthScore(year, month, components, ctx),
+        api.fetchPrevMonthDefectsTotal(year, month, components, ctx),
       ]);
 
       const result = {
@@ -99,6 +107,7 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
         healthScore:       health,
         defectsTable,
         quarters,
+        prevPeriod: { healthScore: prevHealthScore, defectsTotal: prevDefectsTotal },
       };
 
       // Cache monthly/quarterly results (TTL: default 2 minutes, per cache.js implementation)
@@ -106,17 +115,20 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
 
       setData({ ...result, implTickets });
       setUsingMock(false);
+      setError(null);
       markFetchedRef.current?.();
     } catch (err) {
       if (err.name === 'AbortError') return;
       if (err.code === 'JIRA_AUTH' || err.code === 'JIRA_FORBIDDEN') {
         console.error('[useJiraData] Auth/permission error:', err.message);
-        // Don't fall back to mock — re-throw so AppContext can handle auth
         throw err;
       }
-      console.error('[useJiraData] API error, falling back to mock data:', err);
-      setData(getMockData());
-      setUsingMock(true);
+      console.error('[useJiraData] API error:', err);
+      setError(err.message || 'Failed to load data');
+      if (!stale) {
+        setData(getMockData());
+        setUsingMock(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -136,6 +148,7 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
     data,
     loading,
     usingMock,
+    error,
     todayLabel: todayLabel(),
     lastFetchedAt,
     refresh,
