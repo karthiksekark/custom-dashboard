@@ -239,6 +239,56 @@
   white-space: nowrap;
 }
 
+// ── Sortable column headers ───────────────────────────────────────────────────
+.data-table__th--sortable {
+  cursor: pointer;
+  user-select: none;
+  &:hover { background: $color-sky-100; }
+}
+
+.sort-icon {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 9px;
+  color: $color-text-muted;
+  vertical-align: middle;
+  line-height: 1;
+  &--active { color: $color-primary; font-weight: 700; }
+}
+
+// ── Weekly rollup rows ────────────────────────────────────────────────────────
+.data-table__row--week-rollup {
+  background: #f1f5f9 !important;
+  border-top: 1px dashed $color-text-faint;
+  border-bottom: 2px solid $color-sky-100;
+
+  td {
+    color: #64748b;
+    font-size: 12px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  &.wr:hover td { background: #e8edf3 !important; }
+}
+
+.week-rollup-label {
+  font-style: italic;
+  font-size: 10px;
+  color: #64748b;
+  white-space: nowrap;
+  &::before { content: '↳ '; }
+}
+
+.card-list__item--week-rollup {
+  background: #f1f5f9;
+  border-style: dashed;
+  border-color: $color-text-faint;
+
+  .card-list__title { background: #e2e8f0; color: #475569; font-size: 11px; font-style: italic; }
+  .card-list__key   { color: #64748b; }
+}
+
 // ── Header tooltip (shared by tab daily metrics table) ────────────────────────
 .th-tip {
   position: relative;
