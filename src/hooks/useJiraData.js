@@ -1,14 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
-import moment from 'moment-timezone';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import * as api from '../services/jiraApi';
 import * as cache from '../services/cache';
+import { useAppContext } from './useAppContext';
+import { todayLabel } from '../utils/jqlUtils';
 import {
   MOCK_DEFECTS_BY_PRIORITY, MOCK_DEFECTS_BY_STATUS, MOCK_IMPL_TICKETS,
   MOCK_DEFECTS_TABLE, MOCK_RELEASE_ROWS, MOCK_TOTALS,
   MOCK_QUARTERS, MOCK_HEALTH_SCORE,
 } from '../services/mockData';
-
-const EST = 'America/New_York';
 
 const JIRA_CONFIGURED = !!import.meta.env.VITE_JIRA_BASE_URL;
 
@@ -40,13 +39,19 @@ function createEmptyRMData() {
 
 
 export function useJiraData({ year, month, components, dashboardView, activeTab, isFiltered }) {
+  const { state } = useAppContext();
+  const refreshIntervalMs = state.preferences.refreshInterval != null
+    ? state.preferences.refreshInterval * 60 * 1000
+    : null; // null means "Off" — no auto-refresh
+
   const [data,          setData]          = useState(createEmptyRMData);
   const [loading,       setLoading]       = useState(true);
   const [usingMock,     setUsingMock]     = useState(false);
   const [lastFetchedAt, setLastFetchedAt] = useState(null);
+  const refreshControllerRef             = useRef(null);
 
-  const load = useCallback(async (signal) => {
-    setLoading(true);
+  const load = useCallback(async (signal, { silent = false } = {}) => {
+    if (!silent) setLoading(true);
 
     if (!JIRA_CONFIGURED) {
       setData(getMockData());
@@ -100,6 +105,11 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
       setLastFetchedAt(new Date());
     } catch (err) {
       if (err.name === 'AbortError') return;
+      if (err.code === 'JIRA_AUTH' || err.code === 'JIRA_FORBIDDEN') {
+        console.error('[useJiraData] Auth/permission error:', err.message);
+        // Don't fall back to mock — re-throw so AppContext can handle auth
+        throw err;
+      }
       console.error('[useJiraData] API error, falling back to mock data:', err);
       setData(getMockData());
       setUsingMock(true);
@@ -111,23 +121,33 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
   useEffect(() => {
     const controller = new AbortController();
     load(controller.signal);
-    return () => controller.abort();
-  }, [load]);
+
+    const interval = refreshIntervalMs
+      ? setInterval(() => {
+          cache.invalidate(cache.makeKey(year, month, components));
+          load(controller.signal, { silent: true });
+        }, refreshIntervalMs)
+      : null;
+
+    return () => {
+      controller.abort();
+      if (interval) clearInterval(interval);
+    };
+  }, [load, year, month, components, refreshIntervalMs]);
 
   const refresh = useCallback(() => {
-    const cacheKey = cache.makeKey(year, month, components);
-    cache.invalidate(cacheKey);
+    refreshControllerRef.current?.abort();
     const controller = new AbortController();
+    refreshControllerRef.current = controller;
+    cache.invalidate(cache.makeKey(year, month, components));
     load(controller.signal);
-    return () => controller.abort();
   }, [load, year, month, components]);
 
   return {
     data,
     loading,
     usingMock,
-    // TODO: migrate to jqlUtils.todayLabel
-    todayLabel: moment().tz(EST).format('M/D/YYYY'),
+    todayLabel: todayLabel(),
     lastFetchedAt,
     refresh,
   };

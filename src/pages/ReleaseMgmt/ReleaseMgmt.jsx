@@ -17,6 +17,7 @@ const EST = 'America/New_York';
 const PRIORITY_COLORS = ['#dc2626', '#ea580c', '#ca8a04', '#0284c7'];
 const STATUS_COLORS   = ['#16a34a', '#ea580c', '#2563eb', '#7c3aed', '#dc2626'];
 
+// Quarter ranges span 3 months; rangeJql covers single months, so we compute manually here.
 // Compute [startDate, endDate] in ISO for a given quarter index (0–3) and year
 function quarterDateRange(yearStr, qIndex) {
   const startMonth = qIndex * 3;        // 0-indexed JS month: Q1=0, Q2=3, Q3=6, Q4=9

@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import moment from 'moment-timezone';
 import * as api from '../services/jiraApi';
 import * as cache from '../services/cache';
+import { useAppContext } from './useAppContext';
+import { todayLabel } from '../utils/jqlUtils';
 
 const JIRA_CONFIGURED    = !!import.meta.env.VITE_JIRA_BASE_URL;
-const EST                = 'America/New_York';
-const AUTO_REFRESH_MS    = 2 * 60 * 1000;
 
 function createEmptyData(rcLabels) {
   const emptyRC = Object.fromEntries((rcLabels || []).map(l => [l, { Critical: 0, High: 0, Medium: 0, Low: 0 }]));
@@ -22,6 +21,11 @@ function createEmptyData(rcLabels) {
 }
 
 export function useTabData({ year, month, components, rcLabels, mockData, dashboardView, activeTab, isFiltered }) {
+  const { state } = useAppContext();
+  const refreshIntervalMs = state.preferences.refreshInterval != null
+    ? state.preferences.refreshInterval * 60 * 1000
+    : null;
+
   const [data,          setData]          = useState(() => createEmptyData(rcLabels));
   const [loading,       setLoading]       = useState(true);
   const [usingMock,     setUsingMock]     = useState(false);
@@ -106,6 +110,10 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
       setLastFetchedAt(new Date());
     } catch (err) {
       if (err.name === 'AbortError') return;
+      if (err.code === 'JIRA_AUTH' || err.code === 'JIRA_FORBIDDEN') {
+        console.error('[useTabData] Auth/permission error:', err.message);
+        throw err;
+      }
       console.error('[useTabData] API error, falling back to mock data:', err);
       setData(mockData);
       setUsingMock(true);
@@ -118,16 +126,18 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
     const controller = new AbortController();
     load(controller.signal);
 
-    const interval = setInterval(() => {
-      cache.invalidate(cache.makeKey(year, month, components));
-      load(controller.signal, { silent: true });
-    }, AUTO_REFRESH_MS);
+    const interval = refreshIntervalMs
+      ? setInterval(() => {
+          cache.invalidate(cache.makeKey(year, month, components));
+          load(controller.signal, { silent: true });
+        }, refreshIntervalMs)
+      : null;
 
     return () => {
       controller.abort();
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
     };
-  }, [load, year, month, components]);
+  }, [load, year, month, components, refreshIntervalMs]);
 
   const refresh = useCallback(() => {
     // Abort any in-flight refresh before starting a new one
@@ -144,8 +154,7 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
     loading,
     phase1Done,
     usingMock,
-    // TODO: migrate to jqlUtils.todayLabel
-    todayLabel: moment().tz(EST).format('M/D/YYYY'),
+    todayLabel: todayLabel(),
     lastFetchedAt,
     refresh,
   };
