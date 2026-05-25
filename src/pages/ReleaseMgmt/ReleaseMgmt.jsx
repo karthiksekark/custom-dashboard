@@ -54,7 +54,7 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
   const activeQIndex = Math.ceil(Number(month) / 3) - 1;  // 0–3
 
   // ── Enrich each quarter with computed date ranges for JIRA links ───────────
-  const enrichedQuarters = data.quarters.map((q, i) => {
+  const enrichedQuarters = data.quarters.map((q) => {
     // Parse year from quarter label, e.g. "2Q26" → "2026"
     const qYear = '20' + q.q.slice(-2);
     const qIdx  = Number(q.q[0]) - 1;   // "2Q26" → 1

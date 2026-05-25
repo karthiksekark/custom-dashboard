@@ -37,6 +37,13 @@ function Sparkline({ values, color = '#0284c7', width = 120, height = 28 }) {
   );
 }
 
+Sparkline.propTypes = {
+  values: PropTypes.arrayOf(PropTypes.number),
+  color:  PropTypes.string,
+  width:  PropTypes.number,
+  height: PropTypes.number,
+};
+
 const EST = 'America/New_York';
 
 const PRIORITY_DEFS = [
@@ -67,6 +74,10 @@ function ThCell({ label }) {
   );
 }
 
+ThCell.propTypes = {
+  label: PropTypes.string.isRequired,
+};
+
 export default function TabDailyMetricsTable({ rows, totals, year, month, components }) {
   const todayStr = moment().tz(EST).format('M/D');
 
@@ -80,7 +91,7 @@ export default function TabDailyMetricsTable({ rows, totals, year, month, compon
       <table className="data-table">
         <thead>
           <tr className="data-table__head-row">
-            {headers.map((h, i) => (
+            {headers.map((h) => (
               <ThCell key={h} label={h} />
             ))}
           </tr>

@@ -31,6 +31,13 @@ function Sparkline({ values, color = '#0284c7', width = 120, height = 28 }) {
   );
 }
 
+Sparkline.propTypes = {
+  values: PropTypes.arrayOf(PropTypes.number),
+  color:  PropTypes.string,
+  width:  PropTypes.number,
+  height: PropTypes.number,
+};
+
 const EST  = 'America/New_York';
 const COLS = ['Release Date', 'Total Tickets', 'Total Defects', 'Critical', 'High', 'Medium', 'Low', 'Health Score'];
 

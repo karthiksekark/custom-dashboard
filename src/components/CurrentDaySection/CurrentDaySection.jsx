@@ -96,6 +96,11 @@ function InlinePie({ data, colors }) {
   );
 }
 
+InlinePie.propTypes = {
+  data:   PropTypes.arrayOf(PropTypes.shape({ name: PropTypes.string, value: PropTypes.number })).isRequired,
+  colors: PropTypes.arrayOf(PropTypes.string).isRequired,
+};
+
 function ImplPanel({ data }) {
   const map   = Object.fromEntries((data || []).map(d => [d.name, d.value]));
   const total = (data || []).reduce((s, d) => s + d.value, 0);
@@ -128,6 +133,10 @@ function ImplPanel({ data }) {
   );
 }
 
+ImplPanel.propTypes = {
+  data: PropTypes.arrayOf(PropTypes.shape({ name: PropTypes.string, value: PropTypes.number })),
+};
+
 function PriorityPanel({ title, data }) {
   const map   = Object.fromEntries((data || []).map(d => [d.name, d.value]));
   const total = (data || []).reduce((s, d) => s + d.value, 0);
@@ -159,6 +168,11 @@ function PriorityPanel({ title, data }) {
     </div>
   );
 }
+
+PriorityPanel.propTypes = {
+  title: PropTypes.string.isRequired,
+  data:  PropTypes.arrayOf(PropTypes.shape({ name: PropTypes.string, value: PropTypes.number })),
+};
 
 export default function CurrentDaySection({ data, todayLabel, lastFetchedAt, onRefresh, isRefreshing }) {
   const fetchedLabel = lastFetchedAt

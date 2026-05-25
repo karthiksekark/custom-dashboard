@@ -106,6 +106,13 @@ function InlinePie({ labels, values, colors, options }) {
   );
 }
 
+InlinePie.propTypes = {
+  labels:  PropTypes.arrayOf(PropTypes.string).isRequired,
+  values:  PropTypes.arrayOf(PropTypes.number).isRequired,
+  colors:  PropTypes.arrayOf(PropTypes.string).isRequired,
+  options: PropTypes.object.isRequired,
+};
+
 function InfoTooltip({ text }) {
   return (
     <span className="rcps__tooltip">
@@ -114,6 +121,10 @@ function InfoTooltip({ text }) {
     </span>
   );
 }
+
+InfoTooltip.propTypes = {
+  text: PropTypes.string.isRequired,
+};
 
 export default function RootCausePrioritySection({ title, rootCauses, data }) {
   // Left pie — aggregate total per root cause

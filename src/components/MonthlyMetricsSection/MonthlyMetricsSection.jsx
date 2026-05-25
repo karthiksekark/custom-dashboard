@@ -72,6 +72,12 @@ function TrendBadge({ current, prev, inverseColor = false }) {
   );
 }
 
+TrendBadge.propTypes = {
+  current:      PropTypes.number,
+  prev:         PropTypes.number,
+  inverseColor: PropTypes.bool,
+};
+
 function InfoTooltip({ text }) {
   return (
     <span className="mms__tooltip">
@@ -80,6 +86,10 @@ function InfoTooltip({ text }) {
     </span>
   );
 }
+
+InfoTooltip.propTypes = {
+  text: PropTypes.string.isRequired,
+};
 
 function PriorityPie({ data }) {
   const canvasRef = useRef(null);
@@ -117,6 +127,13 @@ function PriorityPie({ data }) {
     </div>
   );
 }
+
+PriorityPie.propTypes = {
+  data: PropTypes.arrayOf(PropTypes.shape({
+    name:  PropTypes.string,
+    value: PropTypes.number,
+  })).isRequired,
+};
 
 export default function MonthlyMetricsSection({
   monthLabel,

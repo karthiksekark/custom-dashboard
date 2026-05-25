@@ -2,7 +2,6 @@ import { useState, useCallback, useRef } from 'react';
 import * as api from '../services/jiraApi';
 import * as cache from '../services/cache';
 import { DEFAULT_TTL_MS } from '../services/cache';
-import { useAppContext } from './useAppContext';
 import { todayLabel } from '../utils/jqlUtils';
 import { useBaseData } from './useBaseData';
 
@@ -24,8 +23,6 @@ function createEmptyData(rcLabels) {
 }
 
 export function useTabData({ year, month, components, rcLabels, mockData, dashboardView, activeTab, isFiltered }) {
-  const { state } = useAppContext();
-
   const [data,       setData]       = useState(() => createEmptyData(rcLabels));
   const [loading,    setLoading]    = useState(true);
   const [usingMock,  setUsingMock]  = useState(false);

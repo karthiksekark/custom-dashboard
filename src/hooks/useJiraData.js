@@ -2,7 +2,6 @@ import { useState, useCallback, useRef } from 'react';
 import * as api from '../services/jiraApi';
 import * as cache from '../services/cache';
 import { DEFAULT_TTL_MS } from '../services/cache';
-import { useAppContext } from './useAppContext';
 import { todayLabel } from '../utils/jqlUtils';
 import { useBaseData } from './useBaseData';
 import {
@@ -42,8 +41,6 @@ function createEmptyRMData() {
 
 
 export function useJiraData({ year, month, components, dashboardView, activeTab, isFiltered }) {
-  const { state } = useAppContext();
-
   const [data,      setData]      = useState(createEmptyRMData);
   const [loading,   setLoading]   = useState(true);
   const [usingMock, setUsingMock] = useState(false);

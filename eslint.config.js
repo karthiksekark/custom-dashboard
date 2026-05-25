@@ -9,7 +9,7 @@ export default [
     files: ['src/**/*.{js,jsx}'],
     plugins: { react: reactPlugin, 'react-hooks': reactHooks },
     languageOptions: {
-      globals: { ...globals.browser, ...globals.es2021 },
+      globals: { ...globals.browser, ...globals.webextensions, ...globals.es2021 },
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
     settings: { react: { version: 'detect' } },

@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useState } from 'react';
+import PropTypes from 'prop-types';
 import '../components/Toast/Toast.scss';
 
 const ToastContext = createContext(null);
@@ -30,6 +31,18 @@ function ToastList({ toasts }) {
     </div>
   );
 }
+
+ToastList.propTypes = {
+  toasts: PropTypes.arrayOf(PropTypes.shape({
+    id:      PropTypes.number,
+    message: PropTypes.string,
+    type:    PropTypes.string,
+  })).isRequired,
+};
+
+ToastProvider.propTypes = {
+  children: PropTypes.node.isRequired,
+};
 
 export function useToast() {
   const ctx = useContext(ToastContext);
