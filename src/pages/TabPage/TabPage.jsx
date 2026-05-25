@@ -33,6 +33,7 @@ export default function TabPage({
             todayLabel={todayLabel}
             lastFetchedAt={lastFetchedAt}
             onRefresh={refresh}
+            isRefreshing={loading}
           />
         </ErrorBoundary>
       )}
