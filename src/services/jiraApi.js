@@ -6,41 +6,62 @@ const EST         = 'America/New_York';
 const MAX_RESULTS = 1000;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+const MAX_RETRIES = 2;
+
+const inFlight = new Map();
+
 async function jiraFetch(path, options = {}) {
-  const res = await fetch(`${JIRA_BASE}${path}`, {
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    ...options,
-  });
+  if (options.signal?.aborted) {
+    const err = new Error('Aborted'); err.name = 'AbortError'; throw err;
+  }
+  const dedupKey = path + (options.body || '');
+  if (inFlight.has(dedupKey)) return inFlight.get(dedupKey);
 
-  if (res.status === 401) {
-    const err = new Error('JIRA session expired or not authenticated');
-    err.code = 'JIRA_AUTH';
-    err.status = 401;
-    throw err;
-  }
-  if (res.status === 403) {
-    const err = new Error('JIRA permission denied');
-    err.code = 'JIRA_FORBIDDEN';
-    err.status = 403;
-    throw err;
-  }
-  if (!res.ok) {
-    const err = new Error(`JIRA ${res.status}: ${path}`);
-    err.code = 'JIRA_ERROR';
-    err.status = res.status;
-    throw err;
-  }
+  const promise = (async () => {
+    let lastErr;
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      if (options.signal?.aborted) {
+        const err = new Error('Aborted'); err.name = 'AbortError'; throw err;
+      }
+      try {
+        const res = await fetch(`${JIRA_BASE}${path}`, {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          ...options,
+        });
+        if (res.status === 401) {
+          const err = new Error('JIRA session expired or not authenticated');
+          err.code = 'JIRA_AUTH'; err.status = 401; throw err;
+        }
+        if (res.status === 403) {
+          const err = new Error('JIRA permission denied');
+          err.code = 'JIRA_FORBIDDEN'; err.status = 403; throw err;
+        }
+        if (!res.ok) {
+          const err = new Error(`JIRA ${res.status}: ${path}`);
+          err.code = 'JIRA_ERROR'; err.status = res.status;
+          if (res.status >= 400 && res.status < 500) throw err;
+          lastErr = err;
+          if (attempt < MAX_RETRIES) { await new Promise(r => setTimeout(r, 2 ** attempt * 1000)); continue; }
+          throw err;
+        }
+        const json = await res.json();
+        if (json.errorMessages?.length || Object.keys(json.errors || {}).length) {
+          const err = new Error(json.errorMessages?.[0] || 'JIRA returned an error response');
+          err.code = 'JIRA_QUERY_ERROR'; throw err;
+        }
+        return json;
+      } catch (err) {
+        if (err.name === 'AbortError' || err.code === 'JIRA_AUTH' || err.code === 'JIRA_FORBIDDEN' || err.code === 'JIRA_QUERY_ERROR') throw err;
+        lastErr = err;
+        if (attempt < MAX_RETRIES) { await new Promise(r => setTimeout(r, 2 ** attempt * 1000)); continue; }
+      }
+    }
+    throw lastErr;
+  })().finally(() => inFlight.delete(dedupKey));
 
-  const json = await res.json();
-  // JIRA sometimes returns 200 with an error body
-  if (json.errorMessages?.length || Object.keys(json.errors || {}).length) {
-    const err = new Error(json.errorMessages?.[0] || 'JIRA returned an error response');
-    err.code = 'JIRA_QUERY_ERROR';
-    throw err;
-  }
-
-  return json;
+  inFlight.set(dedupKey, promise);
+  return promise;
 }
 
 function jqlSearch(jql, { signal } = {}) {
@@ -56,7 +77,7 @@ function jqlSearch(jql, { signal } = {}) {
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
-export async function fetchDefectsByPriority(year, month, components, { dashboardView, activeTab, isFiltered, signal } = {}) {
+export async function fetchDefectsByPriority(year, month, components, { signal } = {}) {
   const { start, end } = rangeJql(year, month);
   const jql  = `issuetype = Bug${compClause(components)} AND created >= "${start}" AND created <= "${end}" ORDER BY created DESC`;
   const data = await jqlSearch(jql, { signal });
@@ -74,7 +95,7 @@ export async function fetchDefectsByPriority(year, month, components, { dashboar
   return ['Critical', 'High', 'Medium', 'Low'].filter(k => counts[k]).map(name => ({ name, value: counts[name] }));
 }
 
-export async function fetchDefectsByStatus(year, month, components, { dashboardView, activeTab, isFiltered, signal } = {}) {
+export async function fetchDefectsByStatus(year, month, components, { signal } = {}) {
   const { start, end } = rangeJql(year, month);
   const jql  = `issuetype = Bug${compClause(components)} AND created >= "${start}" AND created <= "${end}" ORDER BY created DESC`;
   const data = await jqlSearch(jql, { signal });
@@ -92,7 +113,7 @@ export async function fetchDefectsByStatus(year, month, components, { dashboardV
   return Object.entries(counts).map(([name, value]) => ({ name, value }));
 }
 
-export async function fetchDailyMetrics(year, month, components, { dashboardView, activeTab, isFiltered, signal } = {}) {
+export async function fetchDailyMetrics(year, month, components, { signal } = {}) {
   const { start, end } = rangeJql(year, month);
   const jql  = `project is not EMPTY${compClause(components)} AND created >= "${start}" AND created <= "${end}" ORDER BY created DESC`;
   const data = await jqlSearch(jql, { signal });
@@ -133,7 +154,7 @@ export async function fetchDailyMetrics(year, month, components, { dashboardView
     });
 }
 
-export async function fetchHealthScore(year, month, components, { dashboardView, activeTab, isFiltered, signal } = {}) {
+export async function fetchHealthScore(year, month, components, { signal } = {}) {
   const { start, end } = rangeJql(year, month);
   const jql  = `project is not EMPTY${compClause(components)} AND created >= "${start}" AND created <= "${end}"`;
   const data = await jqlSearch(jql, { signal });
@@ -142,7 +163,7 @@ export async function fetchHealthScore(year, month, components, { dashboardView,
   return Math.round((closed / data.issues.length) * 100);
 }
 
-export async function fetchTodayDefectsByRootCause(components, rcLabels, { dashboardView, activeTab, isFiltered, signal } = {}) {
+export async function fetchTodayDefectsByRootCause(components, rcLabels, { signal } = {}) {
   const today = moment().tz(EST).format('YYYY-MM-DD');
   const jql   = `issuetype = Bug${compClause(components)} AND created = "${today}"`;
   const data  = await jqlSearch(jql, { signal });
@@ -162,7 +183,7 @@ export async function fetchTodayDefectsByRootCause(components, rcLabels, { dashb
   return result;
 }
 
-export async function fetchTodayRegressionByRootCause(components, rcLabels, { dashboardView, activeTab, isFiltered, signal } = {}) {
+export async function fetchTodayRegressionByRootCause(components, rcLabels, { signal } = {}) {
   const today = moment().tz(EST).format('YYYY-MM-DD');
   const jql   = `issuetype = Bug AND labels = "Regression"${compClause(components)} AND created = "${today}"`;
   const data  = await jqlSearch(jql, { signal });
@@ -182,7 +203,7 @@ export async function fetchTodayRegressionByRootCause(components, rcLabels, { da
   return result;
 }
 
-export async function fetchDefectsByRootCause(year, month, components, rcLabels, { dashboardView, activeTab, isFiltered, signal } = {}) {
+export async function fetchDefectsByRootCause(year, month, components, rcLabels, { signal } = {}) {
   const { start, end } = rangeJql(year, month);
   const jql  = `issuetype = Bug${compClause(components)} AND created >= "${start}" AND created <= "${end}"`;
   const data = await jqlSearch(jql, { signal });
@@ -202,7 +223,7 @@ export async function fetchDefectsByRootCause(year, month, components, rcLabels,
   return result;
 }
 
-export async function fetchRegressionByRootCause(year, month, components, rcLabels, { dashboardView, activeTab, isFiltered, signal } = {}) {
+export async function fetchRegressionByRootCause(year, month, components, rcLabels, { signal } = {}) {
   const { start, end } = rangeJql(year, month);
   const jql  = `issuetype = Bug AND labels = "Regression"${compClause(components)} AND created >= "${start}" AND created <= "${end}"`;
   const data = await jqlSearch(jql, { signal });
@@ -222,7 +243,7 @@ export async function fetchRegressionByRootCause(year, month, components, rcLabe
   return result;
 }
 
-export async function fetchCurrentDayImplByLabel(components, { dashboardView, activeTab, isFiltered, signal } = {}) {
+export async function fetchCurrentDayImplByLabel(components, { signal } = {}) {
   const today = moment().tz(EST).format('YYYY-MM-DD');
   const jql   = `created = "${today}"${compClause(components)} ORDER BY created DESC`;
   const data  = await jqlSearch(jql, { signal });
@@ -241,7 +262,7 @@ export async function fetchCurrentDayImplByLabel(components, { dashboardView, ac
     .map(name => ({ name, value: counts[name] }));
 }
 
-export async function fetchCurrentDayDefectsByPriority(components, { dashboardView, activeTab, isFiltered, signal } = {}) {
+export async function fetchCurrentDayDefectsByPriority(components, { signal } = {}) {
   const today = moment().tz(EST).format('YYYY-MM-DD');
   const jql   = `issuetype = Bug${compClause(components)} AND created = "${today}"`;
   const data  = await jqlSearch(jql, { signal });
@@ -255,7 +276,7 @@ export async function fetchCurrentDayDefectsByPriority(components, { dashboardVi
   return ['Critical', 'High', 'Medium', 'Low'].filter(k => counts[k]).map(name => ({ name, value: counts[name] }));
 }
 
-export async function fetchRegressionDefectsByPriority(components, { dashboardView, activeTab, isFiltered, signal } = {}) {
+export async function fetchRegressionDefectsByPriority(components, { signal } = {}) {
   const today = moment().tz(EST).format('YYYY-MM-DD');
   const jql   = `issuetype = Bug AND labels = "Regression"${compClause(components)} AND created = "${today}"`;
   const data  = await jqlSearch(jql, { signal });
@@ -276,7 +297,7 @@ function tabQuarterPeriod(qNum, year) {
   return `${periods[qNum - 1]} ${year}`;
 }
 
-export async function fetchTabDailyMetrics(year, month, components, { dashboardView, activeTab, isFiltered, signal } = {}) {
+export async function fetchTabDailyMetrics(year, month, components, { signal } = {}) {
   const { start, end } = rangeJql(year, month);
   const jql  = `project is not EMPTY${compClause(components)} AND created >= "${start}" AND created <= "${end}" ORDER BY created DESC`;
   const data = await jqlSearch(jql, { signal });
@@ -348,7 +369,7 @@ export async function fetchTabDailyMetrics(year, month, components, { dashboardV
   return { rows, totals };
 }
 
-export async function fetchTabQuarters(year, components, { dashboardView, activeTab, isFiltered, signal } = {}) {
+export async function fetchTabQuarters(year, components, { signal } = {}) {
   const y = Number(year);
   const quarters = [1, 2, 3, 4].map(qNum => {
     const startMonth = (qNum - 1) * 3;
@@ -403,7 +424,7 @@ export async function fetchTabQuarters(year, components, { dashboardView, active
   });
 }
 
-export async function fetchDefectsAlertTable(components, { dashboardView, activeTab, isFiltered, signal } = {}) {
+export async function fetchDefectsAlertTable(components, { signal } = {}) {
   const today = moment().tz(EST).format('YYYY-MM-DD');
   const jql   = `issuetype = Bug AND status not in (Done, Closed, Resolved)${compClause(components)} AND created <= "${today}"`;
   const data  = await jqlSearch(jql, { signal });
@@ -430,7 +451,20 @@ const IMPL_TICKETS_CONFIG = {
   bizvalLabels: ['BIZ_VAL', 'bizval'],
 };
 
-export async function fetchImplTickets({ dashboardView, activeTab, isFiltered, signal } = {}) {
+export async function fetchPrevMonthHealthScore(year, month, components, ctx) {
+  const prevMonth = month === '01' ? '12' : String(Number(month) - 1).padStart(2, '0');
+  const prevYear  = month === '01' ? String(Number(year) - 1) : year;
+  return fetchHealthScore(prevYear, prevMonth, components, ctx);
+}
+
+export async function fetchPrevMonthDefectsTotal(year, month, components, ctx) {
+  const prevMonth = month === '01' ? '12' : String(Number(month) - 1).padStart(2, '0');
+  const prevYear  = month === '01' ? String(Number(year) - 1) : year;
+  const data = await fetchDefectsByPriority(prevYear, prevMonth, components, ctx);
+  return data.reduce((s, d) => s + (d.value || 0), 0);
+}
+
+export async function fetchImplTickets({ signal } = {}) {
   const today = moment().tz(EST).format('YYYY-MM-DD');
   const { project, components: implComponents, bizvalLabels } = IMPL_TICKETS_CONFIG;
   const compInClause    = implComponents.map(c => `"${c}"`).join(', ');

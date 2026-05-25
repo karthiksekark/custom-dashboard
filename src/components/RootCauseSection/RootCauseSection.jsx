@@ -18,6 +18,10 @@ function InfoTooltip({ text }) {
   );
 }
 
+InfoTooltip.propTypes = {
+  text: PropTypes.string.isRequired,
+};
+
 function RootCauseTable({ rootCauses, data }) {
   const colTotals = PRIORITIES.reduce((acc, p) => {
     acc[p] = rootCauses.reduce((s, rc) => s + (data[rc.label]?.[p] || 0), 0);
@@ -60,6 +64,14 @@ function RootCauseTable({ rootCauses, data }) {
     </table>
   );
 }
+
+RootCauseTable.propTypes = {
+  rootCauses: PropTypes.arrayOf(PropTypes.shape({
+    label:   PropTypes.string.isRequired,
+    tooltip: PropTypes.string.isRequired,
+  })).isRequired,
+  data: PropTypes.object.isRequired,
+};
 
 export default function RootCauseSection({ rootCauses, defectsByRC, regressionByRC }) {
   return (

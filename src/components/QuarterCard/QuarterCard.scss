@@ -121,4 +121,31 @@
     font-weight: 700;
     font-size: 12px;
   }
+
+  &__progress {
+    padding: 8px 12px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__progress-bar {
+    height: 4px;
+    background: #e0f2fe;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  &__progress-fill {
+    height: 100%;
+    background: var(--acc, #0284c7);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+
+  &__progress-label {
+    font-size: 10px;
+    color: #94a3b8;
+    text-align: right;
+  }
 }

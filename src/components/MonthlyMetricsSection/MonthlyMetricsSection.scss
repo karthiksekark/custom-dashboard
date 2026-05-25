@@ -1,6 +1,25 @@
 @use "../../styles/variables" as *;
 @use "../../styles/mixins" as *;
 
+.trend-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  margin-left: 8px;
+
+  &--good {
+    background: #dcfce7;
+    color: #166534;
+  }
+  &--bad {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+}
+
 .mms {
   &__grid {
     display: grid;

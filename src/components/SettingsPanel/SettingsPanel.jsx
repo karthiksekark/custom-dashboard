@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Modal from '../Modal/Modal';
+import manifest from '../../../manifest.json';
 import TeamComponentInput from '../TeamComponentInput/TeamComponentInput';
 import { useAppContext } from '../../hooks/useAppContext';
 import { persistPreferences } from '../../context/AppContext';
@@ -191,6 +192,9 @@ export default function SettingsPanel() {
             </button>
           </div>
         )}
+      </div>
+      <div className="settings-panel__version">
+        v{manifest.version}
       </div>
     </Modal>
   );

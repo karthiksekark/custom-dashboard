@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import * as api from '../services/jiraApi';
 import * as cache from '../services/cache';
-import { useAppContext } from './useAppContext';
+import { DEFAULT_TTL_MS } from '../services/cache';
 import { todayLabel } from '../utils/jqlUtils';
+import { useBaseData } from './useBaseData';
 
 const JIRA_CONFIGURED    = !!import.meta.env.VITE_JIRA_BASE_URL;
 
@@ -17,21 +18,22 @@ function createEmptyData(rcLabels) {
     monthly: { healthScore: null, defectsByPriority: [] },
     dailyMetrics: { rows: [], totals: { t: 0, d: 0, c: 0, h: 0, m: 0, l: 0, rg: 0, fp: 0, dp: 0, hs: null } },
     quarters: [],
+    prevPeriod: { healthScore: null, defectsTotal: null },
   };
 }
 
 export function useTabData({ year, month, components, rcLabels, mockData, dashboardView, activeTab, isFiltered }) {
-  const { state } = useAppContext();
-  const refreshIntervalMs = state.preferences.refreshInterval != null
-    ? state.preferences.refreshInterval * 60 * 1000
-    : null;
+  const [data,       setData]       = useState(() => createEmptyData(rcLabels));
+  const [loading,    setLoading]    = useState(true);
+  const [usingMock,  setUsingMock]  = useState(false);
+  const [phase1Done, setPhase1Done] = useState(false);
+  const [error,      setError]      = useState(null);
 
-  const [data,          setData]          = useState(() => createEmptyData(rcLabels));
-  const [loading,       setLoading]       = useState(true);
-  const [usingMock,     setUsingMock]     = useState(false);
-  const [phase1Done,    setPhase1Done]    = useState(false);
-  const [lastFetchedAt, setLastFetchedAt] = useState(null);
-  const refreshControllerRef             = useRef(null);
+  // Refs so load can call markFetched and read refreshIntervalMs without extra deps
+  const markFetchedRef      = useRef(null);
+  const refreshIntervalMsRef = useRef(null);
+
+  const cacheKey = cache.makeKey(year, month, components);
 
   const load = useCallback(async (signal, { silent = false } = {}) => {
     if (!silent) {
@@ -47,6 +49,7 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
     }
 
     const ctx = { dashboardView, activeTab, isFiltered, signal };
+    let stale = null; // declared outside try so catch block can access it
 
     try {
       // ── Phase 1: fast — current-day data (3 calls) ────────────────────────
@@ -64,14 +67,21 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
       setPhase1Done(true);
 
       // ── Phase 2: slow — monthly + quarterly data, check cache first ────────
-      const cacheKey = cache.makeKey(year, month, components);
-      const cached   = cache.get(cacheKey);
+      const cached = cache.get(cacheKey);
+      stale = !cached ? cache.getStale(cacheKey) : null;
+
       if (cached) {
         setData(prev => ({ ...prev, ...cached }));
-        setLastFetchedAt(new Date());
+        setError(null);
+        markFetchedRef.current?.();
         setLoading(false);
         setUsingMock(false);
         return;
+      }
+      if (stale) {
+        // Show stale data immediately (no spinner), continue fetching fresh below
+        setData(prev => ({ ...prev, ...stale }));
+        setLoading(false);
       }
 
       const [
@@ -79,6 +89,7 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
         monthlyDefectsByRC, monthlyRegressionByRC,
         healthScore, defectsByPriority,
         dailyMetrics, quarters,
+        prevHealthScore, prevDefectsTotal,
       ] = await Promise.all([
         api.fetchTodayDefectsByRootCause(components, rcLabels, ctx),
         api.fetchTodayRegressionByRootCause(components, rcLabels, ctx),
@@ -88,6 +99,8 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
         api.fetchDefectsByPriority(year, month, components, ctx),
         api.fetchTabDailyMetrics(year, month, components, ctx),
         api.fetchTabQuarters(year, components, ctx),
+        api.fetchPrevMonthHealthScore(year, month, components, ctx),
+        api.fetchPrevMonthDefectsTotal(year, month, components, ctx),
       ]);
 
       const rootCause = {
@@ -97,7 +110,7 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
       const monthly = { healthScore, defectsByPriority };
 
       // Cache phase 2 results (exclude current-day data — always keep fresh)
-      cache.set(cacheKey, { rootCause, monthly, dailyMetrics, quarters });
+      cache.set(cacheKey, { rootCause, monthly, dailyMetrics, quarters, prevPeriod: { healthScore: prevHealthScore, defectsTotal: prevDefectsTotal } }, refreshIntervalMsRef.current ?? DEFAULT_TTL_MS);
 
       setData(prev => ({
         ...prev,
@@ -105,55 +118,45 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
         monthly,
         dailyMetrics,
         quarters,
+        prevPeriod: { healthScore: prevHealthScore, defectsTotal: prevDefectsTotal },
       }));
       setUsingMock(false);
-      setLastFetchedAt(new Date());
+      setError(null);
+      markFetchedRef.current?.();
     } catch (err) {
       if (err.name === 'AbortError') return;
       if (err.code === 'JIRA_AUTH' || err.code === 'JIRA_FORBIDDEN') {
         console.error('[useTabData] Auth/permission error:', err.message);
         throw err;
       }
-      console.error('[useTabData] API error, falling back to mock data:', err);
-      setData(mockData);
-      setUsingMock(true);
+      console.error('[useTabData] API error:', err);
+      setError(err.message || 'Failed to load data');
+      // Only fall back to mock if we have no real data yet (first load)
+      if (!stale) {
+        setData(mockData);
+        setUsingMock(true);
+      }
     } finally {
       setLoading(false);
     }
-  }, [year, month, components, rcLabels, mockData, dashboardView, activeTab, isFiltered]);
+  }, [year, month, components, rcLabels, mockData, dashboardView, activeTab, isFiltered, cacheKey]);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    load(controller.signal);
+  const { lastFetchedAt, markFetched, refresh, refreshIntervalMs } = useBaseData({
+    load,
+    cacheKey,
+    deps: [year, month, components],
+  });
 
-    const interval = refreshIntervalMs
-      ? setInterval(() => {
-          cache.invalidate(cache.makeKey(year, month, components));
-          load(controller.signal, { silent: true });
-        }, refreshIntervalMs)
-      : null;
-
-    return () => {
-      controller.abort();
-      if (interval) clearInterval(interval);
-    };
-  }, [load, year, month, components, refreshIntervalMs]);
-
-  const refresh = useCallback(() => {
-    // Abort any in-flight refresh before starting a new one
-    refreshControllerRef.current?.abort();
-    const controller = new AbortController();
-    refreshControllerRef.current = controller;
-
-    cache.invalidate(cache.makeKey(year, month, components));
-    load(controller.signal);
-  }, [load, year, month, components]);
+  // Keep refs in sync so load can use these without extra deps
+  markFetchedRef.current      = markFetched;
+  refreshIntervalMsRef.current = refreshIntervalMs;
 
   return {
     data,
     loading,
     phase1Done,
     usingMock,
+    error,
     todayLabel: todayLabel(),
     lastFetchedAt,
     refresh,

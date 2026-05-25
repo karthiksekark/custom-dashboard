@@ -19,6 +19,31 @@ import {
 } from '../../services/jiraLinks';
 import './Tables.scss';
 
+function Sparkline({ values, color = '#0284c7', width = 120, height = 28 }) {
+  const nums = (values || []).filter(v => v != null && !isNaN(v));
+  if (nums.length < 2) return null;
+  const max   = Math.max(...nums);
+  const min   = Math.min(...nums);
+  const range = max - min || 1;
+  const pts   = nums.map((v, i) => {
+    const x = (i / (nums.length - 1)) * width;
+    const y = height - ((v - min) / range) * (height - 4) - 2;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  return (
+    <svg width={width} height={height} aria-hidden="true" style={{ display: 'block' }}>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+Sparkline.propTypes = {
+  values: PropTypes.arrayOf(PropTypes.number),
+  color:  PropTypes.string,
+  width:  PropTypes.number,
+  height: PropTypes.number,
+};
+
 const EST = 'America/New_York';
 
 const PRIORITY_DEFS = [
@@ -49,6 +74,10 @@ function ThCell({ label }) {
   );
 }
 
+ThCell.propTypes = {
+  label: PropTypes.string.isRequired,
+};
+
 export default function TabDailyMetricsTable({ rows, totals, year, month, components }) {
   const todayStr = moment().tz(EST).format('M/D');
 
@@ -62,7 +91,7 @@ export default function TabDailyMetricsTable({ rows, totals, year, month, compon
       <table className="data-table">
         <thead>
           <tr className="data-table__head-row">
-            {headers.map((h, i) => (
+            {headers.map((h) => (
               <ThCell key={h} label={h} />
             ))}
           </tr>
@@ -176,6 +205,13 @@ export default function TabDailyMetricsTable({ rows, totals, year, month, compon
           </tfoot>
         )}
       </table>
+
+      {rows.length >= 2 && (
+        <div className="metrics-table__trend">
+          <span className="metrics-table__trend-label">Health score trend</span>
+          <Sparkline values={rows.map(r => r.hs)} color="#0284c7" />
+        </div>
+      )}
 
       {/* ── Mobile card layout ── */}
       <div className="card-list">

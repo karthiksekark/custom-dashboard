@@ -1,0 +1,46 @@
+.error-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  font-size: 13px;
+
+  &--mock {
+    background: #fef2f2;
+    border-color: #fca5a5;
+  }
+
+  &__icon {
+    font-size: 15px;
+    line-height: 1.4;
+  }
+
+  &__body {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  &__message {
+    color: #92400e;
+    .error-card--mock & { color: #991b1b; }
+  }
+
+  &__retry {
+    padding: 3px 10px;
+    border-radius: 5px;
+    border: 1px solid #d97706;
+    background: white;
+    color: #92400e;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    &:hover { background: #fffbeb; }
+  }
+}

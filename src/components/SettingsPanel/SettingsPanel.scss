@@ -176,3 +176,12 @@
     justify-content: flex-end;
   }
 }
+
+.settings-panel {
+  &__version {
+    text-align: center;
+    font-size: 11px;
+    color: #cbd5e1;
+    padding-top: 4px;
+  }
+}

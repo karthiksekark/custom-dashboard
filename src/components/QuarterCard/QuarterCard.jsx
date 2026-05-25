@@ -1,5 +1,8 @@
 import PropTypes from 'prop-types';
+import moment from 'moment-timezone';
 import { healthColor } from '../../services/healthUtils';
+
+const EST = 'America/New_York';
 import JiraLink from '../JiraLink/JiraLink';
 import {
   quarterTotalTicketsLink,
@@ -12,6 +15,16 @@ export default function QuarterCard({ quarter, isActive, components }) {
   const { q, period, days, tickets, defects, c, h, m, l, hs, acc, startDate, endDate } = quarter;
   const empty = days === 0;
   const hc    = healthColor(hs);
+
+  let quarterProgress = null;
+  if (isActive && !empty && startDate && endDate) {
+    const start   = moment.tz(startDate, EST);
+    const end     = moment.tz(endDate, EST);
+    const today   = moment().tz(EST);
+    const total   = end.diff(start, 'days') + 1;
+    const elapsed = Math.min(Math.max(today.diff(start, 'days') + 1, 0), total);
+    quarterProgress = Math.round((elapsed / total) * 100);
+  }
 
   const rows = [
     { label: 'Release Days',  val: empty ? '—' : days,    link: null,                                               color: null       },
@@ -41,6 +54,15 @@ export default function QuarterCard({ quarter, isActive, components }) {
           {empty ? 'Upcoming' : hs}
         </div>
       </div>
+
+      {isActive && quarterProgress !== null && (
+        <div className="quarter-card__progress">
+          <div className="quarter-card__progress-bar">
+            <div className="quarter-card__progress-fill" style={{ width: `${quarterProgress}%` }} />
+          </div>
+          <span className="quarter-card__progress-label">{quarterProgress}% through quarter</span>
+        </div>
+      )}
 
       {rows.map(({ label, val, link, color }, i) => (
         <div key={label} className={`quarter-card__row${i % 2 ? '' : ' quarter-card__row--alt'}`}>

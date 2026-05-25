@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import moment from 'moment-timezone';
 import { AppProvider } from './context/AppContext';
+import { ToastProvider } from './context/ToastContext';
 import { useAppContext } from './hooks/useAppContext';
 import Header from './components/Header/Header';
 import ControlBar from './components/ControlBar/ControlBar';
@@ -139,7 +140,9 @@ function Dashboard() {
 export default function App() {
   return (
     <AppProvider>
-      <Dashboard />
+      <ToastProvider>
+        <Dashboard />
+      </ToastProvider>
     </AppProvider>
   );
 }

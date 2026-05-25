@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { useCountUp } from '../../hooks/useCountUp';
 import { Chart, PieController, ArcElement, Tooltip, Legend } from 'chart.js';
 import Card from '../Card/Card';
 import SectionHeader from '../SectionHeader/SectionHeader';
@@ -57,6 +58,26 @@ const PIE_OPTIONS = {
   },
 };
 
+function TrendBadge({ current, prev, inverseColor = false }) {
+  if (prev == null || current == null || prev === 0) return null;
+  const delta  = current - prev;
+  if (delta === 0) return null;
+  const isGood = inverseColor ? delta < 0 : delta > 0;
+  const arrow  = delta > 0 ? '↑' : '↓';
+  const abs    = Math.abs(delta);
+  return (
+    <span className={`trend-badge trend-badge--${isGood ? 'good' : 'bad'}`}>
+      {arrow} {abs} vs last month
+    </span>
+  );
+}
+
+TrendBadge.propTypes = {
+  current:      PropTypes.number,
+  prev:         PropTypes.number,
+  inverseColor: PropTypes.bool,
+};
+
 function InfoTooltip({ text }) {
   return (
     <span className="mms__tooltip">
@@ -65,6 +86,10 @@ function InfoTooltip({ text }) {
     </span>
   );
 }
+
+InfoTooltip.propTypes = {
+  text: PropTypes.string.isRequired,
+};
 
 function PriorityPie({ data }) {
   const canvasRef = useRef(null);
@@ -103,10 +128,26 @@ function PriorityPie({ data }) {
   );
 }
 
-export default function MonthlyMetricsSection({ monthLabel, healthScore, defectsByPriority }) {
-  const map   = Object.fromEntries((defectsByPriority || []).map(d => [d.name, d.value]));
-  const total = (defectsByPriority || []).reduce((s, d) => s + d.value, 0);
-  const hc    = healthColor(healthScore);
+PriorityPie.propTypes = {
+  data: PropTypes.arrayOf(PropTypes.shape({
+    name:  PropTypes.string,
+    value: PropTypes.number,
+  })).isRequired,
+};
+
+export default function MonthlyMetricsSection({
+  monthLabel,
+  healthScore,
+  defectsByPriority,
+  prevHealthScore,
+  prevDefectsTotal,
+}) {
+  const map              = Object.fromEntries((defectsByPriority || []).map(d => [d.name, d.value]));
+  const total            = (defectsByPriority || []).reduce((s, d) => s + d.value, 0);
+  const currDefectsTotal = (defectsByPriority || []).reduce((s, d) => s + (d.value || 0), 0);
+  const hc               = healthColor(healthScore);
+  const animatedScore    = useCountUp(healthScore);
+  const animatedTotal    = useCountUp(total);
 
   return (
     <Card>
@@ -119,8 +160,9 @@ export default function MonthlyMetricsSection({ monthLabel, healthScore, defects
           <div className="mms__health-body">
             <DoughnutGauge score={healthScore} />
             <div className="mms__health-badge" style={{ '--hc': hc }}>
-              {healthScore != null ? `${healthScore}/100` : 'No data'}
+              {healthScore != null ? `${animatedScore ?? healthScore}/100` : 'No data'}
             </div>
+            <TrendBadge current={healthScore} prev={prevHealthScore} />
           </div>
         </div>
 
@@ -158,7 +200,12 @@ export default function MonthlyMetricsSection({ monthLabel, healthScore, defects
             <tfoot>
               <tr>
                 <td>Total</td>
-                <td>{total ? <span className="mms__total">{total}</span> : <span className="mms__dash">–</span>}</td>
+                <td>
+                  {total
+                    ? <span className="mms__total">{animatedTotal ?? total}</span>
+                    : <span className="mms__dash">–</span>}
+                  <TrendBadge current={currDefectsTotal} prev={prevDefectsTotal} inverseColor />
+                </td>
               </tr>
             </tfoot>
           </table>
@@ -176,4 +223,6 @@ MonthlyMetricsSection.propTypes = {
     name:  PropTypes.string,
     value: PropTypes.number,
   })),
+  prevHealthScore:   PropTypes.number,
+  prevDefectsTotal:  PropTypes.number,
 };

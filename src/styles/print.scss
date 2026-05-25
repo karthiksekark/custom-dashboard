@@ -1,0 +1,43 @@
+@media print {
+  // Hide interactive/nav elements
+  .settings-btn,
+  .cds__refresh-btn,
+  .refresh-btn,
+  button,
+  .offline-banner,
+  .toast-list {
+    display: none !important;
+  }
+
+  // Remove shadows and decorative borders for clean print
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0 !important;
+    break-inside: avoid;
+    margin-bottom: 12px;
+  }
+
+  // Ensure charts print (canvas elements)
+  canvas {
+    max-width: 100%;
+  }
+
+  // Page breaks between major sections
+  .tab-page > *,
+  .release-mgmt > * {
+    break-inside: avoid;
+  }
+
+  // Remove background colors that waste ink
+  body {
+    background: white !important;
+  }
+
+  // Strip decorative backgrounds but preserve text color (health scores, priorities use inline color)
+  .card,
+  .skeleton,
+  .tab-page,
+  .release-mgmt {
+    background: transparent !important;
+  }
+}

@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useRef, useEffect } from 'react';
 import moment from 'moment-timezone';
 import Card from '../../components/Card/Card';
 import SectionHeader from '../../components/SectionHeader/SectionHeader';
@@ -8,8 +9,11 @@ import ImplementationTable from '../../components/Tables/ImplementationTable';
 import DefectsAlertTable from '../../components/Tables/DefectsAlertTable';
 import DailyMetricsTable from '../../components/Tables/DailyMetricsTable';
 import QuarterCard from '../../components/QuarterCard/QuarterCard';
+import ErrorCard from '../../components/ErrorCard/ErrorCard';
 import { healthColor } from '../../services/healthUtils';
 import { useJiraData } from '../../hooks/useJiraData';
+import { useToast } from '../../context/ToastContext';
+import LoadingSkeleton from '../../components/LoadingSkeleton/LoadingSkeleton';
 import './ReleaseMgmt.scss';
 
 const EST = 'America/New_York';
@@ -28,7 +32,17 @@ function quarterDateRange(yearStr, qIndex) {
 }
 
 export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, dashboardView, activeTab, isFiltered }) {
-  const { data, loading } = useJiraData({ year, month, components, dashboardView, activeTab, isFiltered });
+  const { data, loading, error, usingMock, lastFetchedAt, refresh } = useJiraData({ year, month, components, dashboardView, activeTab, isFiltered });
+
+  const { show: showToast } = useToast();
+  const hasLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (lastFetchedAt) {
+      if (hasLoadedRef.current) showToast('Data refreshed');
+      else hasLoadedRef.current = true;
+    }
+  }, [lastFetchedAt, showToast]);
 
   // ── Derived date values (all EST) ──────────────────────────────────────────
   const todayMoment  = moment().tz(EST);
@@ -40,7 +54,7 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
   const activeQIndex = Math.ceil(Number(month) / 3) - 1;  // 0–3
 
   // ── Enrich each quarter with computed date ranges for JIRA links ───────────
-  const enrichedQuarters = data.quarters.map((q, i) => {
+  const enrichedQuarters = data.quarters.map((q) => {
     // Parse year from quarter label, e.g. "2Q26" → "2026"
     const qYear = '20' + q.q.slice(-2);
     const qIdx  = Number(q.q[0]) - 1;   // "2Q26" → 1
@@ -49,8 +63,20 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
 
   const hc = healthColor(data.healthScore);
 
+  if (loading) {
+    return (
+      <div className="release-mgmt">
+        <LoadingSkeleton showChart rows={3} />
+        <LoadingSkeleton showChart={false} rows={4} />
+        <LoadingSkeleton showChart rows={5} />
+      </div>
+    );
+  }
+
   return (
     <div className={`release-mgmt${loading ? ' release-mgmt--loading' : ''}`}>
+
+      {error && <ErrorCard message={error} isMock={usingMock} onRetry={refresh} />}
 
       {/* ── Row 1: Health gauge + (current period only) Implementation table ── */}
       {isCurrentPeriod ? (
@@ -62,6 +88,12 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
               <div className="release-mgmt__health-badge" style={{ '--hc': hc }}>
                 ↑ +5 pts vs yesterday
               </div>
+              {data.prevPeriod?.healthScore != null && data.healthScore != null && (
+                <div className={`rm-trend rm-trend--${data.healthScore >= data.prevPeriod.healthScore ? 'good' : 'bad'}`}>
+                  {data.healthScore >= data.prevPeriod.healthScore ? '↑' : '↓'}{' '}
+                  {Math.abs(data.healthScore - data.prevPeriod.healthScore).toFixed(1)} pts vs last month
+                </div>
+              )}
             </div>
           </Card>
 
@@ -78,6 +110,12 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
             <div className="release-mgmt__health-badge" style={{ '--hc': hc }}>
               ↑ +5 pts vs yesterday
             </div>
+            {data.prevPeriod?.healthScore != null && data.healthScore != null && (
+              <div className={`rm-trend rm-trend--${data.healthScore >= data.prevPeriod.healthScore ? 'good' : 'bad'}`}>
+                {data.healthScore >= data.prevPeriod.healthScore ? '↑' : '↓'}{' '}
+                {Math.abs(data.healthScore - data.prevPeriod.healthScore).toFixed(1)} pts vs last month
+              </div>
+            )}
           </div>
         </Card>
       )}
@@ -85,7 +123,7 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
       {/* ── Row 2: Defects alert (current period only) ── */}
       {isCurrentPeriod && (
         <Card variant="alert">
-          <SectionHeader eyebrow="⚠ Alert" title={`Defects Not Closed before 8am — ${todayLabel}`} variant="alert" />
+          <SectionHeader eyebrow="&#9888; Alert" title={`Defects Not Closed before 8am — ${todayLabel}`} variant="alert" />
           <DefectsAlertTable rows={data.defectsTable} todayIso={todayIso} components={components} />
         </Card>
       )}
@@ -112,7 +150,7 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
       </Card>
 
       {/* ── Row 5: Quarterly overview ── */}
-      <Card>
+      <Card collapsible>
         <SectionHeader eyebrow="Quarterly Overview" title={`Quarterly Release Metrics — ${year}`} />
         <div className="release-mgmt__quarters">
           {enrichedQuarters.map((q, i) => (
