@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useMemo } from 'react';
 import { useTabData } from '../../hooks/useTabData';
 import Card from '../../components/Card/Card';
 import SectionHeader from '../../components/SectionHeader/SectionHeader';
@@ -15,7 +16,7 @@ export default function TabPage({
   year, month, monthLabel, components, isCurrentPeriod,
   dashboardView, activeTab, isFiltered, team,
 }) {
-  const rcLabels = team.rootCauses.map(rc => rc.label);
+  const rcLabels = useMemo(() => team.rootCauses.map(rc => rc.label), [team]);
   const { data, loading, todayLabel, lastFetchedAt, refresh } = useTabData({
     year, month, components,
     rcLabels,
