@@ -1,9 +1,27 @@
 import moment from 'moment-timezone';
 import { compClause, rangeJql } from '../utils/jqlUtils';
+import { TEAMS } from '../config/teams.config';
 
 const JIRA_BASE   = import.meta.env.VITE_JIRA_BASE_URL || '';
 const EST         = 'America/New_York';
 const MAX_RESULTS = 1000;
+
+// ── Team / impl-component lookup tables (built once at module load) ────────────
+function parseCompStr(str) {
+  return (str || '').split(',').map(s => s.trim()).filter(Boolean);
+}
+
+// Maps each team component string → team label  e.g. 'DIGOPS/FED' → 'FED'
+const TEAM_BY_COMPONENT = Object.fromEntries(
+  TEAMS.flatMap(t => parseCompStr(t.defaultComponents).map(c => [c, t.label]))
+);
+
+// Maps impl JIRA component → count key  e.g. 'DIGOPS/UAT' → 'UAT'
+const IMPL_COMPONENT_MAP = {
+  'DIGOPS/UAT':    'UAT',
+  'DIGOPS/OPUAT':  'OPUAT',
+  'DIGOPS/CR_UAT': 'CR_UAT',
+};
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const MAX_RETRIES = 2;
@@ -70,7 +88,7 @@ function jqlSearch(jql, { signal } = {}) {
     body: JSON.stringify({
       jql,
       maxResults: MAX_RESULTS,
-      fields: ['priority', 'status', 'created', 'resolutiondate', 'assignee', 'labels', 'issuetype'],
+      fields: ['priority', 'status', 'created', 'resolutiondate', 'assignee', 'labels', 'issuetype', 'components'],
     }),
     signal,
   });
@@ -459,21 +477,34 @@ export async function fetchPrevMonthDefectsTotal(year, month, components, ctx) {
 export async function fetchImplTickets({ signal } = {}) {
   const today = moment().tz(EST).format('YYYY-MM-DD');
   const { project, components: implComponents, bizvalLabels } = IMPL_TICKETS_CONFIG;
-  const compInClause    = implComponents.map(c => `"${c}"`).join(', ');
-  const bizvalInClause  = bizvalLabels.map(l => `"${l}"`).join(', ');
+  const compInClause   = implComponents.map(c => `"${c}"`).join(', ');
+  const bizvalInClause = bizvalLabels.map(l => `"${l}"`).join(', ');
   const jql = `project = ${project} AND status not in (Cancelled, "On Hold", Open) AND due = "${today}" AND (component in (${compInClause}) OR summary ~ "BZ VAL" OR summary ~ "BIZ VAL" OR summary ~ "BUSVAL" OR labels in (${bizvalInClause})) AND (labels not in ("Lower-Env", Lower_Env) AND labels is not EMPTY) AND issuetype not in (Task) ORDER BY created DESC`;
   const data = await jqlSearch(jql, { signal });
 
   const byTeam = {};
   data.issues.forEach(issue => {
-    const team   = issue.fields.assignee?.displayName || 'Unassigned';
-    if (!byTeam[team]) byTeam[team] = { team, UAT: 0, OPUAT: 0, CR_UAT: 0, BIZ_VAL: 0, Total: 0 };
-    const labels = issue.fields.labels || [];
-    if (labels.includes('UAT'))                               byTeam[team].UAT     += 1;
-    if (labels.includes('OPUAT'))                             byTeam[team].OPUAT   += 1;
-    if (labels.includes('CR_UAT'))                            byTeam[team].CR_UAT  += 1;
-    if (labels.includes('BIZ_VAL') || labels.includes('bizval')) byTeam[team].BIZ_VAL += 1;
-    byTeam[team].Total += 1;
+    const compNames = (issue.fields.components || []).map(c => c.name);
+    const labels    = issue.fields.labels || [];
+
+    // Identify team from JIRA component field
+    const teamComp = compNames.find(c => TEAM_BY_COMPONENT[c]);
+    const teamName = teamComp ? TEAM_BY_COMPONENT[teamComp] : 'Other';
+
+    // Identify impl type from JIRA component field
+    const implComp = compNames.find(c => IMPL_COMPONENT_MAP[c]);
+    const implType = implComp ? IMPL_COMPONENT_MAP[implComp] : null;
+
+    // BIZ_VAL has no component equivalent — detected via label
+    const isBizVal = labels.includes('BIZ_VAL') || labels.includes('bizval');
+
+    // Skip tickets with no impl component and no BIZ_VAL label
+    if (!implType && !isBizVal) return;
+
+    if (!byTeam[teamName]) byTeam[teamName] = { team: teamName, UAT: 0, OPUAT: 0, CR_UAT: 0, BIZ_VAL: 0, Total: 0 };
+    if (implType) byTeam[teamName][implType] += 1;
+    if (isBizVal) byTeam[teamName].BIZ_VAL  += 1;
+    byTeam[teamName].Total += 1;
   });
 
   return Object.values(byTeam);
