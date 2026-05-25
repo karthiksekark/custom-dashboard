@@ -147,40 +147,27 @@ export async function fetchMonthlyDefects(year, month, components, rcLabels, { s
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
-export async function fetchDefectsByPriority(year, month, components, { signal } = {}) {
+export async function fetchDefects(year, month, components, { signal } = {}) {
   const { start, end } = rangeJql(year, month);
   const jql  = `issuetype = Bug${compClause(components)} AND created >= "${start}" AND created <= "${end}" ORDER BY created DESC`;
   const data = await jqlSearch(jql, { signal });
 
   if (data.total > data.issues.length) {
-    console.warn(`[fetchDefectsByPriority] Results truncated: total=${data.total}, fetched=${data.issues.length}`);
+    console.warn(`[fetchDefects] Results truncated: total=${data.total}, fetched=${data.issues.length}`);
   }
 
-  const counts = {};
+  const priority = {}, status = {};
   data.issues.forEach(issue => {
     const p = issue.fields.priority?.name || 'Unknown';
-    counts[p] = (counts[p] || 0) + 1;
+    const s = issue.fields.status?.name   || 'Unknown';
+    priority[p] = (priority[p] || 0) + 1;
+    status[s]   = (status[s]   || 0) + 1;
   });
 
-  return ['Critical', 'High', 'Medium', 'Low'].filter(k => counts[k]).map(name => ({ name, value: counts[name] }));
-}
-
-export async function fetchDefectsByStatus(year, month, components, { signal } = {}) {
-  const { start, end } = rangeJql(year, month);
-  const jql  = `issuetype = Bug${compClause(components)} AND created >= "${start}" AND created <= "${end}" ORDER BY created DESC`;
-  const data = await jqlSearch(jql, { signal });
-
-  if (data.total > data.issues.length) {
-    console.warn(`[fetchDefectsByStatus] Results truncated: total=${data.total}, fetched=${data.issues.length}`);
-  }
-
-  const counts = {};
-  data.issues.forEach(issue => {
-    const s = issue.fields.status?.name || 'Unknown';
-    counts[s] = (counts[s] || 0) + 1;
-  });
-
-  return Object.entries(counts).map(([name, value]) => ({ name, value }));
+  return {
+    byPriority: ['Critical', 'High', 'Medium', 'Low'].filter(k => priority[k]).map(name => ({ name, value: priority[name] })),
+    byStatus:   Object.entries(status).map(([name, value]) => ({ name, value })),
+  };
 }
 
 export async function fetchDailyMetrics(year, month, components, { signal } = {}) {
@@ -470,8 +457,8 @@ export async function fetchPrevMonthHealthScore(year, month, components, ctx) {
 export async function fetchPrevMonthDefectsTotal(year, month, components, ctx) {
   const prevMonth = month === '01' ? '12' : String(Number(month) - 1).padStart(2, '0');
   const prevYear  = month === '01' ? String(Number(year) - 1) : year;
-  const data = await fetchDefectsByPriority(prevYear, prevMonth, components, ctx);
-  return data.reduce((s, d) => s + (d.value || 0), 0);
+  const data = await fetchDefects(prevYear, prevMonth, components, ctx);
+  return data.byPriority.reduce((s, d) => s + (d.value || 0), 0);
 }
 
 export async function fetchImplTickets({ signal } = {}) {

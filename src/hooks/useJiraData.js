@@ -86,9 +86,8 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
         setLoading(false);
       }
 
-      const [priority, status, daily, health, defectsTable, quarters, prevHealthScore, prevDefectsTotal] = await Promise.all([
-        api.fetchDefectsByPriority(year, month, components, ctx),
-        api.fetchDefectsByStatus(year, month, components, ctx),
+      const [defects, daily, health, defectsTable, quarters, prevHealthScore, prevDefectsTotal] = await Promise.all([
+        api.fetchDefects(year, month, components, ctx),
         api.fetchDailyMetrics(year, month, components, ctx),
         api.fetchHealthScore(year, month, components, ctx),
         api.fetchDefectsAlertTable(components, ctx),
@@ -98,8 +97,8 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
       ]);
 
       const result = {
-        defectsByPriority: priority,
-        defectsByStatus:   status,
+        defectsByPriority: defects.byPriority,
+        defectsByStatus:   defects.byStatus,
         releaseRows:       daily,
         totals:            buildTotals(daily),
         healthScore:       health,
