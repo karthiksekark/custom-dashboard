@@ -76,6 +76,58 @@ function jqlSearch(jql, { signal } = {}) {
   });
 }
 
+// ── Aggregation helpers ───────────────────────────────────────────────────────
+const PRIORITIES = ['Critical', 'High', 'Medium', 'Low'];
+
+function groupByPriority(issues) {
+  const counts = {};
+  issues.forEach(issue => {
+    const p = issue.fields.priority?.name;
+    if (PRIORITIES.includes(p)) counts[p] = (counts[p] || 0) + 1;
+  });
+  return PRIORITIES.filter(k => counts[k]).map(name => ({ name, value: counts[name] }));
+}
+
+function groupByRootCause(issues, rcLabels) {
+  const result = {};
+  rcLabels.forEach(label => { result[label] = { Critical: 0, High: 0, Medium: 0, Low: 0 }; });
+  issues.forEach(issue => {
+    const labels   = issue.fields.labels || [];
+    const priority = issue.fields.priority?.name;
+    if (!PRIORITIES.includes(priority)) return;
+    rcLabels.forEach(label => {
+      if (labels.includes(label)) result[label][priority] += 1;
+    });
+  });
+  return result;
+}
+
+// ── Consolidated defect fetches (priority + root cause in one request) ────────
+
+export async function fetchCurrentDayDefects(components, rcLabels, { signal } = {}) {
+  const today = moment().tz(EST).format('YYYY-MM-DD');
+  const jql   = `issuetype = Bug${compClause(components)} AND created = "${today}"`;
+  const data  = await jqlSearch(jql, { signal });
+  return { byPriority: groupByPriority(data.issues), byRootCause: groupByRootCause(data.issues, rcLabels) };
+}
+
+export async function fetchCurrentDayRegression(components, rcLabels, { signal } = {}) {
+  const today = moment().tz(EST).format('YYYY-MM-DD');
+  const jql   = `issuetype = Bug AND labels = "Regression"${compClause(components)} AND created = "${today}"`;
+  const data  = await jqlSearch(jql, { signal });
+  return { byPriority: groupByPriority(data.issues), byRootCause: groupByRootCause(data.issues, rcLabels) };
+}
+
+export async function fetchMonthlyDefects(year, month, components, rcLabels, { signal } = {}) {
+  const { start, end } = rangeJql(year, month);
+  const jql  = `issuetype = Bug${compClause(components)} AND created >= "${start}" AND created <= "${end}"`;
+  const data = await jqlSearch(jql, { signal });
+  if (data.total > data.issues.length) {
+    console.warn(`[fetchMonthlyDefects] Results truncated: total=${data.total}, fetched=${data.issues.length}`);
+  }
+  return { byPriority: groupByPriority(data.issues), byRootCause: groupByRootCause(data.issues, rcLabels) };
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
 export async function fetchDefectsByPriority(year, month, components, { signal } = {}) {
   const { start, end } = rangeJql(year, month);
@@ -161,66 +213,6 @@ export async function fetchHealthScore(year, month, components, { signal } = {})
   if (!data.issues.length) return null;
   const closed = data.issues.filter(i => ['Done', 'Closed', 'Resolved'].includes(i.fields.status?.name)).length;
   return Math.round((closed / data.issues.length) * 100);
-}
-
-export async function fetchTodayDefectsByRootCause(components, rcLabels, { signal } = {}) {
-  const today = moment().tz(EST).format('YYYY-MM-DD');
-  const jql   = `issuetype = Bug${compClause(components)} AND created = "${today}"`;
-  const data  = await jqlSearch(jql, { signal });
-
-  const result = {};
-  rcLabels.forEach(label => { result[label] = { Critical: 0, High: 0, Medium: 0, Low: 0 }; });
-
-  data.issues.forEach(issue => {
-    const labels   = issue.fields.labels || [];
-    const priority = issue.fields.priority?.name;
-    if (!['Critical', 'High', 'Medium', 'Low'].includes(priority)) return;
-    rcLabels.forEach(label => {
-      if (labels.includes(label)) result[label][priority] += 1;
-    });
-  });
-
-  return result;
-}
-
-export async function fetchTodayRegressionByRootCause(components, rcLabels, { signal } = {}) {
-  const today = moment().tz(EST).format('YYYY-MM-DD');
-  const jql   = `issuetype = Bug AND labels = "Regression"${compClause(components)} AND created = "${today}"`;
-  const data  = await jqlSearch(jql, { signal });
-
-  const result = {};
-  rcLabels.forEach(label => { result[label] = { Critical: 0, High: 0, Medium: 0, Low: 0 }; });
-
-  data.issues.forEach(issue => {
-    const labels   = issue.fields.labels || [];
-    const priority = issue.fields.priority?.name;
-    if (!['Critical', 'High', 'Medium', 'Low'].includes(priority)) return;
-    rcLabels.forEach(label => {
-      if (labels.includes(label)) result[label][priority] += 1;
-    });
-  });
-
-  return result;
-}
-
-export async function fetchDefectsByRootCause(year, month, components, rcLabels, { signal } = {}) {
-  const { start, end } = rangeJql(year, month);
-  const jql  = `issuetype = Bug${compClause(components)} AND created >= "${start}" AND created <= "${end}"`;
-  const data = await jqlSearch(jql, { signal });
-
-  const result = {};
-  rcLabels.forEach(label => { result[label] = { Critical: 0, High: 0, Medium: 0, Low: 0 }; });
-
-  data.issues.forEach(issue => {
-    const labels   = issue.fields.labels || [];
-    const priority = issue.fields.priority?.name;
-    if (!['Critical', 'High', 'Medium', 'Low'].includes(priority)) return;
-    rcLabels.forEach(label => {
-      if (labels.includes(label)) result[label][priority] += 1;
-    });
-  });
-
-  return result;
 }
 
 export async function fetchRegressionByRootCause(year, month, components, rcLabels, { signal } = {}) {

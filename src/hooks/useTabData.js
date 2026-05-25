@@ -52,17 +52,28 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
     let stale = null; // declared outside try so catch block can access it
 
     try {
-      // ── Phase 1: fast — current-day data (3 calls) ────────────────────────
-      const [impl, defectsToday, regressionToday] = await Promise.all([
+      // ── Phase 1: fast — current-day data (3 calls, each returns priority + root cause) ──
+      const [impl, todayDefects, todayRegression] = await Promise.all([
         api.fetchCurrentDayImplByLabel(components, ctx),
-        api.fetchCurrentDayDefectsByPriority(components, ctx),
-        api.fetchRegressionDefectsByPriority(components, ctx),
+        api.fetchCurrentDayDefects(components, rcLabels, ctx),
+        api.fetchCurrentDayRegression(components, rcLabels, ctx),
       ]);
 
-      // Update state immediately with phase 1 data; loading stays true for phase 2
+      // Phase 1 now populates both currentDay (priority) and rootCause.today (root cause)
       setData(prev => ({
         ...prev,
-        currentDay: { impl, defects: defectsToday, regression: regressionToday },
+        currentDay: {
+          impl,
+          defects:    todayDefects.byPriority,
+          regression: todayRegression.byPriority,
+        },
+        rootCause: {
+          ...prev.rootCause,
+          today: {
+            defects:    todayDefects.byRootCause,
+            regression: todayRegression.byRootCause,
+          },
+        },
       }));
       setPhase1Done(true);
 
@@ -70,8 +81,18 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
       const cached = cache.get(cacheKey);
       stale = !cached ? cache.getStale(cacheKey) : null;
 
+      // Helper: merge cached/stale monthly data without overwriting today's root cause from phase 1
+      const mergeMonthly = (prev, source) => ({
+        ...prev,
+        rootCause: { today: prev.rootCause.today, monthly: source.rootCause.monthly },
+        monthly:     source.monthly,
+        dailyMetrics: source.dailyMetrics,
+        quarters:     source.quarters,
+        prevPeriod:   source.prevPeriod,
+      });
+
       if (cached) {
-        setData(prev => ({ ...prev, ...cached }));
+        setData(prev => mergeMonthly(prev, cached));
         setError(null);
         markFetchedRef.current?.();
         setLoading(false);
@@ -80,45 +101,39 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
       }
       if (stale) {
         // Show stale data immediately (no spinner), continue fetching fresh below
-        setData(prev => ({ ...prev, ...stale }));
+        setData(prev => mergeMonthly(prev, stale));
         setLoading(false);
       }
 
       const [
-        todayDefectsByRC, todayRegressionByRC,
-        monthlyDefectsByRC, monthlyRegressionByRC,
-        healthScore, defectsByPriority,
+        monthlyDefects, monthlyRegressionByRC,
+        healthScore,
         dailyMetrics, quarters,
         prevHealthScore, prevDefectsTotal,
       ] = await Promise.all([
-        api.fetchTodayDefectsByRootCause(components, rcLabels, ctx),
-        api.fetchTodayRegressionByRootCause(components, rcLabels, ctx),
-        api.fetchDefectsByRootCause(year, month, components, rcLabels, ctx),
+        api.fetchMonthlyDefects(year, month, components, rcLabels, ctx),
         api.fetchRegressionByRootCause(year, month, components, rcLabels, ctx),
         api.fetchHealthScore(year, month, components, ctx),
-        api.fetchDefectsByPriority(year, month, components, ctx),
         api.fetchTabDailyMetrics(year, month, components, ctx),
         api.fetchTabQuarters(year, components, ctx),
         api.fetchPrevMonthHealthScore(year, month, components, ctx),
         api.fetchPrevMonthDefectsTotal(year, month, components, ctx),
       ]);
 
-      const rootCause = {
-        today:   { defects: todayDefectsByRC,   regression: todayRegressionByRC },
-        monthly: { defects: monthlyDefectsByRC, regression: monthlyRegressionByRC },
-      };
-      const monthly = { healthScore, defectsByPriority };
+      const rootCauseMonthly = { defects: monthlyDefects.byRootCause, regression: monthlyRegressionByRC };
+      const monthly          = { healthScore, defectsByPriority: monthlyDefects.byPriority };
+      const prevPeriod       = { healthScore: prevHealthScore, defectsTotal: prevDefectsTotal };
 
-      // Cache phase 2 results (exclude current-day data — always keep fresh)
-      cache.set(cacheKey, { rootCause, monthly, dailyMetrics, quarters, prevPeriod: { healthScore: prevHealthScore, defectsTotal: prevDefectsTotal } }, refreshIntervalMsRef.current ?? DEFAULT_TTL_MS);
+      // Cache monthly data only — today's root cause is always fresh (never cached)
+      cache.set(cacheKey, { rootCause: { monthly: rootCauseMonthly }, monthly, dailyMetrics, quarters, prevPeriod }, refreshIntervalMsRef.current ?? DEFAULT_TTL_MS);
 
       setData(prev => ({
         ...prev,
-        rootCause,
+        rootCause:   { today: prev.rootCause.today, monthly: rootCauseMonthly },
         monthly,
         dailyMetrics,
         quarters,
-        prevPeriod: { healthScore: prevHealthScore, defectsTotal: prevDefectsTotal },
+        prevPeriod,
       }));
       setUsingMock(false);
       setError(null);
