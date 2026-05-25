@@ -10,6 +10,7 @@ import DailyMetricsTable from '../../components/Tables/DailyMetricsTable';
 import QuarterCard from '../../components/QuarterCard/QuarterCard';
 import { healthColor } from '../../services/healthUtils';
 import { useJiraData } from '../../hooks/useJiraData';
+import LoadingSkeleton from '../../components/LoadingSkeleton/LoadingSkeleton';
 import './ReleaseMgmt.scss';
 
 const EST = 'America/New_York';
@@ -48,6 +49,16 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
   });
 
   const hc = healthColor(data.healthScore);
+
+  if (loading) {
+    return (
+      <div className="release-mgmt">
+        <LoadingSkeleton showChart rows={3} />
+        <LoadingSkeleton showChart={false} rows={4} />
+        <LoadingSkeleton showChart rows={5} />
+      </div>
+    );
+  }
 
   return (
     <div className={`release-mgmt${loading ? ' release-mgmt--loading' : ''}`}>
