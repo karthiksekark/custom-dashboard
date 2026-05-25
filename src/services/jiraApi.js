@@ -507,5 +507,9 @@ export async function fetchImplTickets({ signal } = {}) {
     byTeam[teamName].Total += 1;
   });
 
-  return Object.values(byTeam);
+  return Object.values(byTeam).sort((a, b) => {
+    if (a.team === 'Other') return 1;
+    if (b.team === 'Other') return -1;
+    return 0;
+  });
 }
