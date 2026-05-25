@@ -1,4 +1,5 @@
 import moment from 'moment-timezone';
+import { compClause, rangeJql } from '../utils/jqlUtils';
 
 const JIRA_BASE   = import.meta.env.VITE_JIRA_BASE_URL || '';
 const EST         = 'America/New_York';
@@ -11,8 +12,35 @@ async function jiraFetch(path, options = {}) {
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     ...options,
   });
-  if (!res.ok) throw new Error(`JIRA ${res.status}: ${path}`);
-  return res.json();
+
+  if (res.status === 401) {
+    const err = new Error('JIRA session expired or not authenticated');
+    err.code = 'JIRA_AUTH';
+    err.status = 401;
+    throw err;
+  }
+  if (res.status === 403) {
+    const err = new Error('JIRA permission denied');
+    err.code = 'JIRA_FORBIDDEN';
+    err.status = 403;
+    throw err;
+  }
+  if (!res.ok) {
+    const err = new Error(`JIRA ${res.status}: ${path}`);
+    err.code = 'JIRA_ERROR';
+    err.status = res.status;
+    throw err;
+  }
+
+  const json = await res.json();
+  // JIRA sometimes returns 200 with an error body
+  if (json.errorMessages?.length || Object.keys(json.errors || {}).length) {
+    const err = new Error(json.errorMessages?.[0] || 'JIRA returned an error response');
+    err.code = 'JIRA_QUERY_ERROR';
+    throw err;
+  }
+
+  return json;
 }
 
 function jqlSearch(jql, { signal } = {}) {
@@ -25,20 +53,6 @@ function jqlSearch(jql, { signal } = {}) {
     }),
     signal,
   });
-}
-
-function rangeJql(year, month) {
-  const start = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).format('YYYY-MM-DD');
-  const end   = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, EST).endOf('month').format('YYYY-MM-DD');
-  return { start, end };
-}
-
-// Builds  AND component in ("A", "B")  from a comma-separated string
-function compClause(components) {
-  if (!components?.trim()) return '';
-  const names = components.split(',').map(c => c.trim()).filter(Boolean);
-  if (!names.length) return '';
-  return ` AND component in (${names.map(n => `"${n}"`).join(', ')})`;
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────

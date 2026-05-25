@@ -62,6 +62,20 @@ export function AppProvider({ children }) {
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [state.isAuth]);
 
+  // Sync preferences when changed in another extension tab
+  useEffect(() => {
+    if (!globalThis.chrome?.storage?.onChanged) return;
+
+    function handleStorageChange(changes, area) {
+      if (area !== 'local' || !changes.preferences) return;
+      const updated = changes.preferences.newValue;
+      if (updated) dispatch({ type: 'STORAGE_LOADED', payload: updated });
+    }
+
+    chrome.storage.onChanged.addListener(handleStorageChange);
+    return () => chrome.storage.onChanged.removeListener(handleStorageChange);
+  }, []);
+
   return (
     <AppContext.Provider value={{ state, dispatch }}>
       {children}

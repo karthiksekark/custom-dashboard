@@ -85,8 +85,9 @@ export default function DoughnutGauge({ score }) {
   }
 
   return (
-    <div className="gauge">
-      <canvas ref={canvasRef} />
+    <div className="gauge" role="img" aria-label={`Health score: ${score} out of 100`}>
+      <canvas ref={canvasRef} aria-hidden="true" />
+      <span className="sr-only">{score} out of 100</span>
     </div>
   );
 }

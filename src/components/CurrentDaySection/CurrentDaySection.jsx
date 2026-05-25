@@ -160,7 +160,7 @@ function PriorityPanel({ title, data }) {
   );
 }
 
-export default function CurrentDaySection({ data, todayLabel, lastFetchedAt, onRefresh }) {
+export default function CurrentDaySection({ data, todayLabel, lastFetchedAt, onRefresh, isRefreshing }) {
   const fetchedLabel = lastFetchedAt
     ? `Updated ${lastFetchedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
     : null;
@@ -173,12 +173,13 @@ export default function CurrentDaySection({ data, todayLabel, lastFetchedAt, onR
           {fetchedLabel && <span className="cds__freshness">{fetchedLabel}</span>}
           {onRefresh && (
             <button
-              className="cds__refresh-btn"
+              className={`cds__refresh-btn${isRefreshing ? ' cds__refresh-btn--loading' : ''}`}
               onClick={onRefresh}
-              aria-label="Refresh current day data"
-              title="Refresh"
+              disabled={isRefreshing}
+              aria-label={isRefreshing ? 'Refreshing…' : 'Refresh current day data'}
+              title={isRefreshing ? 'Refreshing…' : 'Refresh'}
             >
-              ↻
+              {isRefreshing ? '…' : '↻'}
             </button>
           )}
         </div>
@@ -201,4 +202,5 @@ CurrentDaySection.propTypes = {
   todayLabel:    PropTypes.string.isRequired,
   lastFetchedAt: PropTypes.instanceOf(Date),
   onRefresh:     PropTypes.func,
+  isRefreshing:  PropTypes.bool,
 };
