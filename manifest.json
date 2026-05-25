@@ -4,7 +4,13 @@
   "version": "1.0.0",
   "description": "Release Intelligence Dashboard — Arctic White",
   "permissions": ["tabs", "cookies", "storage"],
-  "host_permissions": ["<all_urls>"],
+  "host_permissions": [
+    "https://*.atlassian.net/*",
+    "https://*.jira.com/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
   "action": {
     "default_title": "Open JIRA Dashboard"
   },

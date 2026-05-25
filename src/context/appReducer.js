@@ -1,7 +1,8 @@
 const TEAM_KEYS = ['release-management', 'fed', 'catalog'];
 
 export const DEFAULT_PREFERENCES = {
-  dashboardView:  'default',
+  dashboardView:   'default',
+  refreshInterval: 2,           // minutes; null = Off
   teamComponents: {
     'release-management': 'DIGOPS/UAT',
     'fed':                'DIGOPS/FED',
@@ -25,25 +26,28 @@ function isFullyConfigured(prefs) {
 // Migrate from old single `components` field — pre-populate all three teams
 function migrateLegacy(raw) {
   if (!raw) return DEFAULT_PREFERENCES;
-  if (raw.teamComponents) return raw;
-  const legacy = raw.components?.trim() || '';
-  return {
+  const base = raw.teamComponents ? raw : {
     dashboardView:  raw.dashboardView || 'default',
     teamComponents: {
-      'release-management': legacy,
-      'fed':                legacy,
-      'catalog':            legacy,
+      'release-management': raw.components?.trim() || '',
+      'fed':                raw.components?.trim() || '',
+      'catalog':            raw.components?.trim() || '',
     },
   };
+  // Ensure refreshInterval has a default if not present (migration from older versions)
+  if (base.refreshInterval === undefined) base.refreshInterval = 2;
+  return base;
 }
 
 export function appReducer(state, action) {
   switch (action.type) {
 
     case 'STORAGE_LOADED': {
+      const migrated = migrateLegacy(action.payload);
       const prefs = {
-        ...migrateLegacy(action.payload),
-        teamComponents: DEFAULT_PREFERENCES.teamComponents,
+        ...migrated,
+        // Only fall back to defaults for teamComponents if stored ones are empty
+        teamComponents: migrated.teamComponents || DEFAULT_PREFERENCES.teamComponents,
       };
       return {
         ...state,

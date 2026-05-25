@@ -7,6 +7,14 @@ import { DEFAULT_PREFERENCES } from '../../context/appReducer';
 import { TEAMS } from '../../config/teams.config';
 import './SettingsPanel.scss';
 
+const REFRESH_OPTIONS = [
+  { value: 1,    label: '1 minute' },
+  { value: 2,    label: '2 minutes' },
+  { value: 5,    label: '5 minutes' },
+  { value: 10,   label: '10 minutes' },
+  { value: null, label: 'Off' },
+];
+
 const GEAR_ICON = (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="3"/>
@@ -38,6 +46,9 @@ export default function SettingsPanel() {
     Object.fromEntries(TEAMS.map(t => [t.key, existing[t.key] || '']))
   );
   const [dashboardView,  setDashboardView]  = useState(preferences.dashboardView || 'default');
+  const [refreshInterval, setRefreshInterval] = useState(
+    preferences.refreshInterval ?? 2
+  );
   const [errors,         setErrors]         = useState({});
   const [saved,          setSaved]          = useState(false);
   const [confirmReset,   setConfirmReset]   = useState(false);
@@ -59,6 +70,7 @@ export default function SettingsPanel() {
 
     const updated = {
       dashboardView,
+      refreshInterval,
       teamComponents: Object.fromEntries(TEAMS.map(t => [t.key, teamComponents[t.key].trim()])),
     };
     dispatch({ type: 'SET_PREFERENCES', payload: updated });
@@ -123,6 +135,32 @@ export default function SettingsPanel() {
               </label>
             ))}
           </div>
+        </div>
+
+        {/* ── Refresh Interval ── */}
+        <div>
+          <span className="modal-body__label">Auto-Refresh Interval</span>
+          <div className="settings-panel__refresh-options">
+            {REFRESH_OPTIONS.map(opt => (
+              <label
+                key={String(opt.value)}
+                className={`settings-panel__refresh-opt${refreshInterval === opt.value ? ' settings-panel__refresh-opt--active' : ''}`}
+              >
+                <input
+                  type="radio"
+                  name="refreshInterval"
+                  value={String(opt.value)}
+                  checked={refreshInterval === opt.value}
+                  onChange={() => setRefreshInterval(opt.value)}
+                  className="settings-panel__radio"
+                />
+                {opt.label}
+              </label>
+            ))}
+          </div>
+          <p className="settings-panel__refresh-hint">
+            How often current-day and monthly data refreshes automatically.
+          </p>
         </div>
 
         {/* ── Reset confirmation ── */}
