@@ -6,41 +6,71 @@ const EST         = 'America/New_York';
 const MAX_RESULTS = 1000;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+const MAX_RETRIES = 2;
+
 async function jiraFetch(path, options = {}) {
-  const res = await fetch(`${JIRA_BASE}${path}`, {
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    ...options,
-  });
+  let lastErr;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    // Don't retry if the signal is already aborted
+    if (options.signal?.aborted) {
+      const err = new Error('Aborted');
+      err.name = 'AbortError';
+      throw err;
+    }
+    try {
+      const res = await fetch(`${JIRA_BASE}${path}`, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        ...options,
+      });
 
-  if (res.status === 401) {
-    const err = new Error('JIRA session expired or not authenticated');
-    err.code = 'JIRA_AUTH';
-    err.status = 401;
-    throw err;
-  }
-  if (res.status === 403) {
-    const err = new Error('JIRA permission denied');
-    err.code = 'JIRA_FORBIDDEN';
-    err.status = 403;
-    throw err;
-  }
-  if (!res.ok) {
-    const err = new Error(`JIRA ${res.status}: ${path}`);
-    err.code = 'JIRA_ERROR';
-    err.status = res.status;
-    throw err;
-  }
+      if (res.status === 401) {
+        const err = new Error('JIRA session expired or not authenticated');
+        err.code = 'JIRA_AUTH';
+        err.status = 401;
+        throw err;
+      }
+      if (res.status === 403) {
+        const err = new Error('JIRA permission denied');
+        err.code = 'JIRA_FORBIDDEN';
+        err.status = 403;
+        throw err;
+      }
+      if (!res.ok) {
+        const err = new Error(`JIRA ${res.status}: ${path}`);
+        err.code = 'JIRA_ERROR';
+        err.status = res.status;
+        // Only retry on 5xx server errors, not 4xx client errors
+        if (res.status >= 400 && res.status < 500) throw err;
+        lastErr = err;
+        if (attempt < MAX_RETRIES) {
+          await new Promise(r => setTimeout(r, 2 ** attempt * 1000)); // 1s, 2s
+          continue;
+        }
+        throw err;
+      }
 
-  const json = await res.json();
-  // JIRA sometimes returns 200 with an error body
-  if (json.errorMessages?.length || Object.keys(json.errors || {}).length) {
-    const err = new Error(json.errorMessages?.[0] || 'JIRA returned an error response');
-    err.code = 'JIRA_QUERY_ERROR';
-    throw err;
-  }
+      const json = await res.json();
+      if (json.errorMessages?.length || Object.keys(json.errors || {}).length) {
+        const err = new Error(json.errorMessages?.[0] || 'JIRA returned an error response');
+        err.code = 'JIRA_QUERY_ERROR';
+        throw err;
+      }
 
-  return json;
+      return json;
+    } catch (err) {
+      // Never retry auth errors, abort errors, or query errors
+      if (err.name === 'AbortError' || err.code === 'JIRA_AUTH' || err.code === 'JIRA_FORBIDDEN' || err.code === 'JIRA_QUERY_ERROR') {
+        throw err;
+      }
+      lastErr = err;
+      if (attempt < MAX_RETRIES) {
+        await new Promise(r => setTimeout(r, 2 ** attempt * 1000));
+        continue;
+      }
+    }
+  }
+  throw lastErr;
 }
 
 function jqlSearch(jql, { signal } = {}) {

@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import * as api from '../services/jiraApi';
 import * as cache from '../services/cache';
 import { DEFAULT_TTL_MS } from '../services/cache';
 import { useAppContext } from './useAppContext';
 import { todayLabel } from '../utils/jqlUtils';
+import { useBaseData } from './useBaseData';
 import {
   MOCK_DEFECTS_BY_PRIORITY, MOCK_DEFECTS_BY_STATUS, MOCK_IMPL_TICKETS,
   MOCK_DEFECTS_TABLE, MOCK_RELEASE_ROWS, MOCK_TOTALS,
@@ -41,15 +42,16 @@ function createEmptyRMData() {
 
 export function useJiraData({ year, month, components, dashboardView, activeTab, isFiltered }) {
   const { state } = useAppContext();
-  const refreshIntervalMs = state.preferences.refreshInterval != null
-    ? state.preferences.refreshInterval * 60 * 1000
-    : null; // null means "Off" — no auto-refresh
 
-  const [data,          setData]          = useState(createEmptyRMData);
-  const [loading,       setLoading]       = useState(true);
-  const [usingMock,     setUsingMock]     = useState(false);
-  const [lastFetchedAt, setLastFetchedAt] = useState(null);
-  const refreshControllerRef             = useRef(null);
+  const [data,      setData]      = useState(createEmptyRMData);
+  const [loading,   setLoading]   = useState(true);
+  const [usingMock, setUsingMock] = useState(false);
+
+  // Refs so load can call markFetched and read refreshIntervalMs without extra deps
+  const markFetchedRef       = useRef(null);
+  const refreshIntervalMsRef = useRef(null);
+
+  const cacheKey = cache.makeKey(year, month, components);
 
   const load = useCallback(async (signal, { silent = false } = {}) => {
     if (!silent) setLoading(true);
@@ -65,15 +67,14 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
 
     try {
       // Check cache for the monthly/quarterly data (implTickets is always today's — never cached)
-      const cacheKey = cache.makeKey(year, month, components);
-      const cached   = cache.get(cacheKey);
+      const cached = cache.get(cacheKey);
 
       // Always fetch implTickets fresh (today's data)
       const implTickets = await api.fetchImplTickets(ctx);
 
       if (cached) {
         setData({ ...cached, implTickets });
-        setLastFetchedAt(new Date());
+        markFetchedRef.current?.();
         setLoading(false);
         setUsingMock(false);
         return;
@@ -99,11 +100,11 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
       };
 
       // Cache monthly/quarterly results (TTL: default 2 minutes, per cache.js implementation)
-      cache.set(cacheKey, result, refreshIntervalMs ?? DEFAULT_TTL_MS);
+      cache.set(cacheKey, result, refreshIntervalMsRef.current ?? DEFAULT_TTL_MS);
 
       setData({ ...result, implTickets });
       setUsingMock(false);
-      setLastFetchedAt(new Date());
+      markFetchedRef.current?.();
     } catch (err) {
       if (err.name === 'AbortError') return;
       if (err.code === 'JIRA_AUTH' || err.code === 'JIRA_FORBIDDEN') {
@@ -117,32 +118,17 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
     } finally {
       setLoading(false);
     }
-  }, [year, month, components, dashboardView, activeTab, isFiltered, refreshIntervalMs]);
+  }, [year, month, components, dashboardView, activeTab, isFiltered, cacheKey]);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    load(controller.signal);
+  const { lastFetchedAt, markFetched, refresh, refreshIntervalMs } = useBaseData({
+    load,
+    cacheKey,
+    deps: [year, month, components],
+  });
 
-    const interval = refreshIntervalMs
-      ? setInterval(() => {
-          cache.invalidate(cache.makeKey(year, month, components));
-          load(controller.signal, { silent: true });
-        }, refreshIntervalMs)
-      : null;
-
-    return () => {
-      controller.abort();
-      if (interval) clearInterval(interval);
-    };
-  }, [load, year, month, components, refreshIntervalMs]);
-
-  const refresh = useCallback(() => {
-    refreshControllerRef.current?.abort();
-    const controller = new AbortController();
-    refreshControllerRef.current = controller;
-    cache.invalidate(cache.makeKey(year, month, components));
-    load(controller.signal);
-  }, [load, year, month, components]);
+  // Keep refs in sync so load can use these without extra deps
+  markFetchedRef.current       = markFetched;
+  refreshIntervalMsRef.current = refreshIntervalMs;
 
   return {
     data,
