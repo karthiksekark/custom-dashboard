@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useMemo } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 import { useTabData } from '../../hooks/useTabData';
 import Card from '../../components/Card/Card';
 import SectionHeader from '../../components/SectionHeader/SectionHeader';
@@ -11,6 +11,8 @@ import TabDailyMetricsTable from '../../components/Tables/TabDailyMetricsTable';
 import TabQuarterSection from '../../components/TabQuarterSection/TabQuarterSection';
 import ErrorBoundary from '../../components/ErrorBoundary/ErrorBoundary';
 import LoadingSkeleton from '../../components/LoadingSkeleton/LoadingSkeleton';
+import ErrorCard from '../../components/ErrorCard/ErrorCard';
+import { useToast } from '../../context/ToastContext';
 import { rangeJql } from '../../utils/jqlUtils';
 import './TabPage.scss';
 
@@ -19,12 +21,22 @@ export default function TabPage({
   dashboardView, activeTab, isFiltered, team,
 }) {
   const rcLabels = useMemo(() => team.rootCauses.map(rc => rc.label), [team]);
-  const { data, loading, phase1Done, todayLabel, lastFetchedAt, refresh } = useTabData({
+  const { data, loading, phase1Done, todayLabel, lastFetchedAt, refresh, error, usingMock } = useTabData({
     year, month, components,
     rcLabels,
     mockData: team.mockData,
     dashboardView, activeTab, isFiltered,
   });
+
+  const toast = useToast();
+  const hasLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (lastFetchedAt) {
+      if (hasLoadedRef.current) toast.show('Data refreshed');
+      else hasLoadedRef.current = true;
+    }
+  }, [lastFetchedAt]);
 
   if (loading && !phase1Done) {
     return (
@@ -51,6 +63,7 @@ export default function TabPage({
 
   return (
     <div className={`tab-page${loading ? ' tab-page--loading' : ''}`}>
+      {error && <ErrorCard message={error} isMock={usingMock} onRetry={refresh} />}
       {isCurrentPeriod && (
         <ErrorBoundary>
           <CurrentDaySection
@@ -76,6 +89,8 @@ export default function TabPage({
           monthLabel={monthLabel}
           healthScore={data.monthly.healthScore}
           defectsByPriority={data.monthly.defectsByPriority}
+          prevHealthScore={data.prevPeriod?.healthScore}
+          prevDefectsTotal={data.prevPeriod?.defectsTotal}
         />
       </ErrorBoundary>
       <ErrorBoundary>
@@ -93,7 +108,7 @@ export default function TabPage({
         />
       </ErrorBoundary>
       <ErrorBoundary>
-        <Card>
+        <Card collapsible>
           <SectionHeader eyebrow="Detailed Breakdown" title={`Daily Release Metrics — ${monthLabel}`} />
           <TabDailyMetricsTable
             rows={data.dailyMetrics.rows}

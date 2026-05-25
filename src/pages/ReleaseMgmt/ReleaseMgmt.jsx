@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useRef, useEffect } from 'react';
 import moment from 'moment-timezone';
 import Card from '../../components/Card/Card';
 import SectionHeader from '../../components/SectionHeader/SectionHeader';
@@ -8,8 +9,10 @@ import ImplementationTable from '../../components/Tables/ImplementationTable';
 import DefectsAlertTable from '../../components/Tables/DefectsAlertTable';
 import DailyMetricsTable from '../../components/Tables/DailyMetricsTable';
 import QuarterCard from '../../components/QuarterCard/QuarterCard';
+import ErrorCard from '../../components/ErrorCard/ErrorCard';
 import { healthColor } from '../../services/healthUtils';
 import { useJiraData } from '../../hooks/useJiraData';
+import { useToast } from '../../context/ToastContext';
 import LoadingSkeleton from '../../components/LoadingSkeleton/LoadingSkeleton';
 import './ReleaseMgmt.scss';
 
@@ -29,7 +32,17 @@ function quarterDateRange(yearStr, qIndex) {
 }
 
 export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, dashboardView, activeTab, isFiltered }) {
-  const { data, loading } = useJiraData({ year, month, components, dashboardView, activeTab, isFiltered });
+  const { data, loading, error, usingMock, lastFetchedAt, refresh } = useJiraData({ year, month, components, dashboardView, activeTab, isFiltered });
+
+  const toast = useToast();
+  const hasLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (lastFetchedAt) {
+      if (hasLoadedRef.current) toast.show('Data refreshed');
+      else hasLoadedRef.current = true;
+    }
+  }, [lastFetchedAt]);
 
   // ── Derived date values (all EST) ──────────────────────────────────────────
   const todayMoment  = moment().tz(EST);
@@ -63,6 +76,8 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
   return (
     <div className={`release-mgmt${loading ? ' release-mgmt--loading' : ''}`}>
 
+      {error && <ErrorCard message={error} isMock={usingMock} onRetry={refresh} />}
+
       {/* ── Row 1: Health gauge + (current period only) Implementation table ── */}
       {isCurrentPeriod ? (
         <div className="release-mgmt__top-grid">
@@ -73,6 +88,12 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
               <div className="release-mgmt__health-badge" style={{ '--hc': hc }}>
                 ↑ +5 pts vs yesterday
               </div>
+              {data.prevPeriod?.healthScore != null && data.healthScore != null && (
+                <div className={`rm-trend rm-trend--${data.healthScore >= data.prevPeriod.healthScore ? 'good' : 'bad'}`}>
+                  {data.healthScore >= data.prevPeriod.healthScore ? '↑' : '↓'}{' '}
+                  {Math.abs(data.healthScore - data.prevPeriod.healthScore).toFixed(1)} pts vs last month
+                </div>
+              )}
             </div>
           </Card>
 
@@ -89,6 +110,12 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
             <div className="release-mgmt__health-badge" style={{ '--hc': hc }}>
               ↑ +5 pts vs yesterday
             </div>
+            {data.prevPeriod?.healthScore != null && data.healthScore != null && (
+              <div className={`rm-trend rm-trend--${data.healthScore >= data.prevPeriod.healthScore ? 'good' : 'bad'}`}>
+                {data.healthScore >= data.prevPeriod.healthScore ? '↑' : '↓'}{' '}
+                {Math.abs(data.healthScore - data.prevPeriod.healthScore).toFixed(1)} pts vs last month
+              </div>
+            )}
           </div>
         </Card>
       )}
@@ -96,7 +123,7 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
       {/* ── Row 2: Defects alert (current period only) ── */}
       {isCurrentPeriod && (
         <Card variant="alert">
-          <SectionHeader eyebrow="⚠ Alert" title={`Defects Not Closed before 8am — ${todayLabel}`} variant="alert" />
+          <SectionHeader eyebrow="&#9888; Alert" title={`Defects Not Closed before 8am — ${todayLabel}`} variant="alert" />
           <DefectsAlertTable rows={data.defectsTable} todayIso={todayIso} components={components} />
         </Card>
       )}
@@ -123,7 +150,7 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
       </Card>
 
       {/* ── Row 5: Quarterly overview ── */}
-      <Card>
+      <Card collapsible>
         <SectionHeader eyebrow="Quarterly Overview" title={`Quarterly Release Metrics — ${year}`} />
         <div className="release-mgmt__quarters">
           {enrichedQuarters.map((q, i) => (

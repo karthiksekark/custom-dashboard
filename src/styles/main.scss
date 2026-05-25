@@ -1,6 +1,7 @@
 @use "variables" as *;
 @use "mixins" as *;
 @use "reset";
+@use "print";
 
 .app {
   min-height: 100vh;

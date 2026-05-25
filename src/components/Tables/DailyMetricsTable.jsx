@@ -1,5 +1,30 @@
 import PropTypes from 'prop-types';
 import moment from 'moment-timezone';
+
+function Sparkline({ values, color = '#0284c7', width = 120, height = 28 }) {
+  const nums = (values || []).filter(v => v != null && !isNaN(v));
+  if (nums.length < 2) return null;
+  const max   = Math.max(...nums);
+  const min   = Math.min(...nums);
+  const range = max - min || 1;
+  const pts   = nums.map((v, i) => {
+    const x = (i / (nums.length - 1)) * width;
+    const y = height - ((v - min) / range) * (height - 4) - 2;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  return (
+    <svg width={width} height={height} aria-hidden="true" style={{ display: 'block' }}>
+      <polyline
+        points={pts}
+        fill="none"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 import Chip from '../Chip/Chip';
 import JiraLink from '../JiraLink/JiraLink';
 import { healthColor } from '../../services/healthUtils';
@@ -108,6 +133,13 @@ export default function DailyMetricsTable({ rows, totals, year, month, component
           </tfoot>
         )}
       </table>
+
+      {rows.length >= 2 && (
+        <div className="metrics-table__trend">
+          <span className="metrics-table__trend-label">Health score trend</span>
+          <Sparkline values={rows.map(r => r.hs)} color="#0284c7" />
+        </div>
+      )}
 
       {/* ── Mobile card layout ── */}
       <div className="card-list">
