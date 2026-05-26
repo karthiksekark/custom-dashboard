@@ -17,7 +17,7 @@ export default function QuarterCard({ quarter, isActive, components }) {
   const hc    = healthColor(hs);
 
   let quarterProgress = null;
-  if (isActive && !empty && startDate && endDate) {
+  if (!empty && startDate && endDate) {
     const start   = moment.tz(startDate, EST);
     const end     = moment.tz(endDate, EST);
     const today   = moment().tz(EST);
@@ -55,7 +55,7 @@ export default function QuarterCard({ quarter, isActive, components }) {
         </div>
       </div>
 
-      {isActive && quarterProgress !== null && (
+      {quarterProgress !== null && (
         <div className="quarter-card__progress">
           <div className="quarter-card__progress-bar">
             <div className="quarter-card__progress-fill" style={{ width: `${quarterProgress}%` }} />
