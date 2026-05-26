@@ -33,7 +33,10 @@ async function jiraFetch(path, options = {}) {
     const err = new Error('Aborted'); err.name = 'AbortError'; throw err;
   }
   const dedupKey = path + (options.body || '');
-  if (inFlight.has(dedupKey)) return inFlight.get(dedupKey);
+  // Don't reuse an in-flight promise when the caller has a signal — each
+  // signal-bearing request owns its own abort lifecycle and must not inherit
+  // an abort from a different caller's signal (React Strict Mode double-invoke).
+  if (inFlight.has(dedupKey) && !options.signal) return inFlight.get(dedupKey);
 
   const promise = (async () => {
     let lastErr;
