@@ -527,6 +527,109 @@ export async function fetchTabQuarters(year, components, { signal } = {}) {
   });
 }
 
+export async function fetchRMQuarters(year, { signal } = {}) {
+  const y     = Number(year);
+  const today = moment().tz(EST).format('YYYY-MM-DD');
+
+  const quarters = [1, 2, 3, 4].map(qNum => {
+    const startMonth = (qNum - 1) * 3;
+    const start = moment.tz({ year: y, month: startMonth,     day: 1 }, EST).startOf('month').format('YYYY-MM-DD');
+    const end   = moment.tz({ year: y, month: startMonth + 2, day: 1 }, EST).endOf('month').format('YYYY-MM-DD');
+    // Cap end at today for the current quarter; add 1 day for inclusive past-quarter end
+    const isCurrentQ = today >= start && today <= end;
+    const qEnd = isCurrentQ ? today : moment(end).tz(EST).add(1, 'day').format('YYYY-MM-DD');
+    return {
+      q:         `${qNum}Q${year.slice(-2)}`,
+      period:    tabQuarterPeriod(qNum, year),
+      acc:       TAB_QUARTER_ACCENTS[qNum - 1],
+      startDate: start,
+      endDate:   end,
+      qEnd,
+    };
+  });
+
+  const results = await Promise.allSettled(
+    quarters.map(({ startDate, qEnd }) => {
+      const jql = [
+        '((project = DOPMO',
+        'AND (component in ("DIGOPS/UAT","DIGOPS/OPUAT","DIGOPS/CR_UAT") OR summary ~ "BZ VAL" OR summary ~ "BIZ VAL" OR summary ~ "BUSVAL" OR labels in ("bizval"))',
+        'AND (labels not in ("Lower-Env", Lower_Env) AND labels is not EMPTY)',
+        'AND status not in (Cancelled, "On Hold", Open)',
+        `AND due >= "${startDate}"`,
+        `AND due <= "${qEnd}"`,
+        'AND issuetype not in (Task))',
+        'OR (project = PRODDEF',
+        'AND status not in (Cancelled, "On Hold")',
+        'AND "Release Version" is not EMPTY',
+        `AND created >= "${moment(startDate).tz(EST).subtract(1, 'days').format('YYYY-MM-DD')}"`,
+        `AND created <= "${qEnd}"`,
+        'AND priority in ("Critical", "High", "Medium", "Low")))',
+      ].join(' ') + ' ORDER BY created DESC';
+      return jqlSearch(jql, {
+        signal,
+        fields: ['priority', 'status', 'created', 'duedate', 'resolutiondate', 'customfield_41817', 'customfield_44301'],
+      });
+    })
+  );
+
+  return quarters.map(({ q, period, acc, startDate, endDate }, i) => {
+    const empty = { q, period, days: 0, tickets: 0, defects: 0, c: 0, h: 0, m: 0, l: 0, hs: null, acc, startDate, endDate };
+    if (results[i].status !== 'fulfilled') return empty;
+
+    const raw = results[i].value;
+    if (raw.total > raw.issues?.length) {
+      console.warn(`[fetchRMQuarters] Q${i + 1} truncated: total=${raw.total}, fetched=${raw.issues?.length}`);
+    }
+    const issues = raw.issues || [];
+    if (!issues.length) return empty;
+
+    const dopmoDateSet = new Set();
+    let tickets = 0, defects = 0, c = 0, h = 0, m = 0, l = 0;
+    let cTotal = 0, cLate = 0, hTotal = 0, hLate = 0;
+    const cutoffCache = new Map();
+
+    issues.forEach(issue => {
+      if (issue.key.startsWith('DOPMO-')) {
+        if (issue.fields?.duedate) dopmoDateSet.add(issue.fields.duedate);
+        tickets += 1;
+        return;
+      }
+      if (!issue.key.startsWith('PRODDEF-')) return;
+
+      const cfRaw       = issue.fields?.customfield_41817?.value;
+      const cfDate      = cfRaw?.split(' ')[1]?.split('/').slice(0, -1).join('/');
+      const createdDate = moment(issue.fields?.created).tz(EST).format('M/D');
+      const dateKey     = cfDate === createdDate ? createdDate : (cfDate ?? createdDate);
+      if (!dateKey || !cfRaw?.includes('Content ' + dateKey)) return;
+
+      defects += 1;
+      const p = issue.fields.priority?.name;
+      if      (p === 'Critical') c += 1;
+      else if (p === 'High')     h += 1;
+      else if (p === 'Medium')   m += 1;
+      else if (p === 'Low')      l += 1;
+
+      if (p === 'Critical' || p === 'High') {
+        const rc = issue.fields?.customfield_44301?.value;
+        if (!rc || !RC_EXCLUDE_SET.has(rc)) {
+          if (!cutoffCache.has(dateKey)) {
+            const [dm, dd] = dateKey.split('/').map(Number);
+            cutoffCache.set(dateKey, moment.tz({ year: y, month: dm - 1, date: dd, hour: 8, minute: 0 }, EST));
+          }
+          const isLate = !issue.fields.resolutiondate ||
+                         moment(issue.fields.resolutiondate).tz(EST).isAfter(cutoffCache.get(dateKey));
+          if (p === 'Critical') { cTotal += 1; if (isLate) cLate += 1; }
+          else                  { hTotal += 1; if (isLate) hLate += 1; }
+        }
+      }
+    });
+
+    const w  = cTotal * 2 + hTotal;
+    const hs = w > 0 ? parseFloat(((cLate * 2 + hLate) / w * 100).toFixed(2)) : null;
+    return { q, period, days: dopmoDateSet.size, tickets, defects, c, h, m, l, hs, acc, startDate, endDate };
+  });
+}
+
 export async function fetchDefectsAlertTable({ signal } = {}) {
   const today    = moment().tz(EST).format('YYYY-MM-DD');
   const tomorrow = moment().tz(EST).add(1, 'day').format('YYYY-MM-DD');
