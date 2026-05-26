@@ -99,13 +99,15 @@ async function jiraFetch(path, options = {}) {
   return promise;
 }
 
-function jqlSearch(jql, { signal } = {}) {
+const DEFAULT_FIELDS = ['priority', 'status', 'created', 'resolutiondate', 'assignee', 'labels', 'issuetype', 'components'];
+
+function jqlSearch(jql, { signal, fields } = {}) {
   return jiraFetch('/rest/api/2/search', {
     method: 'POST',
     body: JSON.stringify({
       jql,
       maxResults: MAX_RESULTS,
-      fields: ['priority', 'status', 'created', 'resolutiondate', 'assignee', 'labels', 'issuetype', 'components'],
+      fields: fields ?? DEFAULT_FIELDS,
     }),
     signal,
   });
@@ -195,20 +197,60 @@ export async function fetchDefects(year, month, { signal } = {}) {
 
 export async function fetchDailyMetrics(year, month, components, { signal } = {}) {
   const { start, end } = rangeJql(year, month);
-  const jql  = `project is not EMPTY${compClause(components)} AND created >= "${start}" AND created <= "${end}" ORDER BY created DESC`;
-  const data = await jqlSearch(jql, { signal });
+  const today           = moment().tz(EST).format('YYYY-MM-DD');
+  const isCurrentMonth  = moment().tz(EST).format('MM');
+  const modifiedEndDate = moment(isCurrentMonth === month ? today : end)
+    .tz(EST)
+    .add(isCurrentMonth === month ? 0 : 1, 'days')
+    .format('YYYY-MM-DD');
+
+  const jql = [
+    '((project = DOPMO',
+    'AND (component in ("DIGOPS/UAT","DIGOPS/OPUAT","DIGOPS/CR_UAT") OR summary ~ "BZ VAL" OR summary ~ "BIZ VAL" OR summary ~ "BUSVAL" OR labels in ("bizval"))',
+    'AND (labels not in ("Lower-Env", Lower_Env) AND labels is not EMPTY)',
+    'AND status not in (Cancelled, "On Hold", Open)',
+    `AND due >= "${start}"`,
+    `AND due <= "${modifiedEndDate}"`,
+    'AND issuetype not in (Task))',
+    'OR (project = PRODDEF',
+    'AND status not in (Cancelled, "On Hold")',
+    'AND "Release Version" is not EMPTY',
+    `AND created >= "${moment(start).tz(EST).subtract(1, 'days').format('YYYY-MM-DD')}"`,
+    `AND created <= "${modifiedEndDate}"`,
+    'AND priority in ("Critical", "High", "Medium", "Low")))',
+  ].join(' ') + ' ORDER BY created DESC';
+
+  const data = await jqlSearch(jql, {
+    signal,
+    fields: ['priority', 'status', 'created', 'duedate', 'customfield_41817'],
+  });
 
   if (data.total > data.issues.length) {
     console.warn(`[fetchDailyMetrics] Results truncated: total=${data.total}, fetched=${data.issues.length}`);
   }
 
   const byDate = {};
+  const monthPrefix = moment(month, 'MM').tz(EST).format('M/');
+
   data.issues.forEach(issue => {
-    const dateKey = moment.tz(issue.fields.created, EST).format('M/D');
+    let dateKey;
+    if (issue.key.startsWith('DOPMO-')) {
+      dateKey = moment(issue.fields?.duedate).tz(EST).format('M/D');
+    } else {
+      const cfRaw       = issue.fields?.customfield_41817?.value;
+      const cfDate      = cfRaw?.split(' ')[1]?.split('/').slice(0, -1).join('/');
+      const createdDate = moment(issue.fields?.created).tz(EST).format('M/D');
+      dateKey = cfDate === createdDate ? createdDate : (cfDate ?? createdDate);
+    }
+
+    if (!dateKey || !dateKey.startsWith(monthPrefix)) return;
+
     if (!byDate[dateKey]) byDate[dateKey] = { date: dateKey, t: 0, d: 0, c: 0, h: 0, m: 0, l: 0, closedT: 0 };
     const row   = byDate[dateKey];
-    const isBug = issue.fields.issuetype?.name === 'Bug';
-    row.t += 1;
+    const isBug = issue.key.startsWith('PRODDEF-') &&
+                  issue.fields?.customfield_41817?.value?.includes('Content ' + dateKey);
+
+    if (issue.key.startsWith('DOPMO-')) row.t += 1;
     if (isBug) {
       row.d += 1;
       const p = issue.fields.priority?.name;
