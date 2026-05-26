@@ -113,6 +113,22 @@ function jqlSearch(jql, { signal, fields } = {}) {
   });
 }
 
+// Root cause values excluded from health score and defect alert table
+const RC_EXCLUDE_VALUES = [
+  'Unable to reproduce(Unknown RCA)',
+  'Clarification only',
+  'Expired Promo',
+  'Invalid Test Case /Test Data Issue',
+  'Inventory Issue',
+  'Working as designed',
+  'GTS Technical requirement/gap',
+  'Duplicate',
+  'Rejected (PRODDEF Admin use only).',
+  'Enhancement- (Missed Requirement/ Requirement gap)',
+];
+const RC_EXCLUDE_SET = new Set(RC_EXCLUDE_VALUES);
+const RC_EXCLUDE_JQL = RC_EXCLUDE_VALUES.map(v => `"${v}"`).join(', ');
+
 // ── Aggregation helpers ───────────────────────────────────────────────────────
 const PRIORITIES = ['Critical', 'High', 'Medium', 'Low'];
 
@@ -222,7 +238,7 @@ export async function fetchDailyMetrics(year, month, components, { signal } = {}
 
   const data = await jqlSearch(jql, {
     signal,
-    fields: ['priority', 'status', 'created', 'duedate', 'resolutiondate', 'customfield_41817'],
+    fields: ['priority', 'status', 'created', 'duedate', 'resolutiondate', 'customfield_41817', 'customfield_44301'],
   });
 
   if (data.total > data.issues.length) {
@@ -246,7 +262,13 @@ export async function fetchDailyMetrics(year, month, components, { signal } = {}
     if (!dateKey || !dateKey.startsWith(monthPrefix)) return;
 
     if (!byDate[dateKey]) {
-      byDate[dateKey] = { date: dateKey, t: 0, d: 0, c: 0, h: 0, m: 0, l: 0, closedT: 0, chTotal: 0, chLate: 0 };
+      const [dm, dd] = dateKey.split('/').map(Number);
+      byDate[dateKey] = {
+        date: dateKey, t: 0, d: 0, c: 0, h: 0, m: 0, l: 0, closedT: 0,
+        cTotal: 0, cLate: 0, hTotal: 0, hLate: 0,
+        // precompute 8AM EST cutoff for this date once, reused for every C/H defect
+        _cutoff: moment.tz({ year: Number(year), month: dm - 1, date: dd, hour: 8, minute: 0 }, EST),
+      };
     }
     const row   = byDate[dateKey];
     const isBug = issue.key.startsWith('PRODDEF-') &&
@@ -261,14 +283,16 @@ export async function fetchDailyMetrics(year, month, components, { signal } = {}
       else if (p === 'Medium')   row.m += 1;
       else if (p === 'Low')      row.l += 1;
 
-      // Health score: failure rate for Critical+High defects vs 8AM EST cutoff
+      // Health score: weighted failure rate for C+H defects resolved after 8AM EST.
+      // Defects with an excluded root cause (customfield_44301) are skipped.
+      // Critical failures count double: hs = (cLate*2 + hLate) / (cTotal*2 + hTotal) * 100
       if (p === 'Critical' || p === 'High') {
-        row.chTotal += 1;
-        const [dm, dd]  = dateKey.split('/').map(Number);
-        const cutoff    = moment.tz({ year: Number(year), month: dm - 1, date: dd, hour: 8, minute: 0 }, EST);
-        const resolved  = issue.fields.resolutiondate;
-        if (!resolved || moment(resolved).tz(EST).isAfter(cutoff)) {
-          row.chLate += 1;
+        const rc = issue.fields?.customfield_44301?.value;
+        if (!rc || !RC_EXCLUDE_SET.has(rc)) {
+          const resolved = issue.fields.resolutiondate;
+          const isLate   = !resolved || moment(resolved).tz(EST).isAfter(row._cutoff);
+          if (p === 'Critical') { row.cTotal += 1; if (isLate) row.cLate += 1; }
+          else                  { row.hTotal += 1; if (isLate) row.hLate += 1; }
         }
       }
     }
@@ -276,12 +300,16 @@ export async function fetchDailyMetrics(year, month, components, { signal } = {}
   });
 
   return Object.values(byDate)
-    .map(row => ({
-      ...row,
-      c:  row.c || null,
-      l:  row.l || null,
-      hs: row.chTotal > 0 ? parseFloat(((row.chLate / row.chTotal) * 100).toFixed(2)) : null,
-    }))
+    // eslint-disable-next-line no-unused-vars
+    .map(({ _cutoff, cTotal, cLate, hTotal, hLate, closedT, ...row }) => {
+      const w = cTotal * 2 + hTotal;
+      return {
+        ...row,
+        c:  row.c || null,
+        l:  row.l || null,
+        hs: w > 0 ? parseFloat(((cLate * 2 + hLate) / w * 100).toFixed(2)) : null,
+      };
+    })
     .sort((a, b) => {
       const [am, ad] = a.date.split('/').map(Number);
       const [bm, bd] = b.date.split('/').map(Number);
@@ -503,18 +531,7 @@ export async function fetchDefectsAlertTable({ signal } = {}) {
   const today    = moment().tz(EST).format('YYYY-MM-DD');
   const tomorrow = moment().tz(EST).add(1, 'day').format('YYYY-MM-DD');
 
-  const rcExclude = [
-    'Unable to reproduce(Unknown RCA)',
-    'Clarification only',
-    'Expired Promo',
-    'Invalid Test Case /Test Data Issue',
-    'Inventory Issue',
-    'Working as designed',
-    'GTS Technical requirement/gap',
-    'Duplicate',
-    'Rejected (PRODDEF Admin use only).',
-    'Enhancement- (Missed Requirement/ Requirement gap)',
-  ].map(v => `"${v}"`).join(', ');
+  const rcExclude = RC_EXCLUDE_JQL;
 
   const jql = [
     'project = PRODDEF',
