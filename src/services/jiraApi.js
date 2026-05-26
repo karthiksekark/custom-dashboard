@@ -446,8 +446,7 @@ export async function fetchDefectsAlertTable({ signal } = {}) {
     `created < "${tomorrow}"`,
     `("Root Cause_3" not in (${rcExclude}) OR "Root Cause_3" is EMPTY)`,
     `("Date Resolved" >= "${today} 08:00" OR "Date Resolved" is EMPTY OR "Resolved" is EMPTY)`,
-    'ORDER BY due DESC',
-  ].join(' AND ');
+  ].join(' AND ') + ' ORDER BY due DESC';
 
   const data = await jqlSearch(jql, { signal });
 
