@@ -38,18 +38,28 @@ async function jiraFetch(path, options = {}) {
   // an abort from a different caller's signal (React Strict Mode double-invoke).
   if (inFlight.has(dedupKey) && !options.signal) return inFlight.get(dedupKey);
 
+  // Extract signal so it is never forwarded to fetch() — passing signal to
+  // fetch() lets the browser cancel the network request, which shows as
+  // "cancelled" in DevTools when React Strict Mode aborts the first mount.
+  // Instead, signal.aborted is checked at yield points so JS-level abort
+  // semantics are preserved without triggering a network-level cancellation.
+  const { signal, ...fetchOptions } = options;
+
   const promise = (async () => {
     let lastErr;
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      if (options.signal?.aborted) {
+      if (signal?.aborted) {
         const err = new Error('Aborted'); err.name = 'AbortError'; throw err;
       }
       try {
         const res = await fetch(`${JIRA_BASE}${path}`, {
           credentials: 'include',
           headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          ...options,
+          ...fetchOptions,
         });
+        if (signal?.aborted) {
+          const err = new Error('Aborted'); err.name = 'AbortError'; throw err;
+        }
         if (res.status === 401) {
           const err = new Error('JIRA session expired or not authenticated');
           err.code = 'JIRA_AUTH'; err.status = 401; throw err;
