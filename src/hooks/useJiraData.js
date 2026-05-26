@@ -181,5 +181,6 @@ function getMockData() {
     implTickets:       MOCK_IMPL_TICKETS,
     defectsTable:      MOCK_DEFECTS_TABLE,
     quarters:          MOCK_QUARTERS,
+    prevPeriod:        { healthScore: null, defectsTotal: null },
   };
 }

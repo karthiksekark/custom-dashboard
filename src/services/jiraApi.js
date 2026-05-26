@@ -45,6 +45,10 @@ async function jiraFetch(path, options = {}) {
   // semantics are preserved without triggering a network-level cancellation.
   const { signal, ...fetchOptions } = options;
 
+  // Signal-bearing requests are NOT added to inFlight — their abort lifecycle
+  // is caller-specific and must not be shared with other callers.
+  const useDedup = !signal;
+
   const promise = (async () => {
     let lastErr;
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -89,9 +93,9 @@ async function jiraFetch(path, options = {}) {
       }
     }
     throw lastErr;
-  })().finally(() => inFlight.delete(dedupKey));
+  })().finally(() => { if (useDedup) inFlight.delete(dedupKey); });
 
-  inFlight.set(dedupKey, promise);
+  if (useDedup) inFlight.set(dedupKey, promise);
   return promise;
 }
 

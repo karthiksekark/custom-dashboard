@@ -60,6 +60,7 @@ export const MOCK_QUARTERS = [
 ];
 
 export const MOCK_TAB_FED = {
+  prevPeriod: { healthScore: null, defectsTotal: null },
   currentDay: {
     impl:       [{ name: 'UAT', value: 3 }, { name: 'NOUAT', value: 7 }],
     defects:    [{ name: 'High', value: 5 }, { name: 'Medium', value: 3 }],
@@ -133,6 +134,7 @@ export const MOCK_TAB_FED = {
 };
 
 export const MOCK_TAB_CATALOG = {
+  prevPeriod: { healthScore: null, defectsTotal: null },
   currentDay: {
     impl:       [{ name: 'UAT', value: 4 }, { name: 'OPUAT', value: 2 }, { name: 'NOUAT', value: 6 }],
     defects:    [{ name: 'Critical', value: 1 }, { name: 'High', value: 3 }, { name: 'Medium', value: 2 }, { name: 'Low', value: 1 }],
