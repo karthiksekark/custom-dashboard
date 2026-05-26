@@ -105,12 +105,7 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
         setLoading(false);
       }
 
-      const [
-        monthlyDefects, monthlyRegressionByRC,
-        healthScore,
-        dailyMetrics, quarters,
-        prevHealthScore, prevDefectsTotal,
-      ] = await Promise.all([
+      const settled = await Promise.allSettled([
         api.fetchMonthlyDefects(year, month, components, rcLabels, ctx),
         api.fetchRegressionByRootCause(year, month, components, rcLabels, ctx),
         api.fetchHealthScore(year, month, components, ctx),
@@ -119,6 +114,25 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
         api.fetchPrevMonthHealthScore(year, month, components, ctx),
         api.fetchPrevMonthDefectsTotal(year, month, components, ctx),
       ]);
+
+      // Re-throw auth errors so AppContext can redirect
+      for (const r of settled) {
+        if (r.status === 'rejected' &&
+            (r.reason?.code === 'JIRA_AUTH' || r.reason?.code === 'JIRA_FORBIDDEN')) {
+          throw r.reason;
+        }
+      }
+
+      const val = (i, fallback) =>
+        settled[i].status === 'fulfilled' ? settled[i].value : fallback;
+
+      const monthlyDefects       = val(0, { byPriority: [], byRootCause: {} });
+      const monthlyRegressionByRC = val(1, {});
+      const healthScore          = val(2, null);
+      const dailyMetrics         = val(3, { rows: [], totals: { t: 0, d: 0, c: 0, h: 0, m: 0, l: 0, rg: 0, fp: 0, dp: 0, hs: null } });
+      const quarters             = val(4, []);
+      const prevHealthScore      = val(5, null);
+      const prevDefectsTotal     = val(6, null);
 
       const rootCauseMonthly = { defects: monthlyDefects.byRootCause, regression: monthlyRegressionByRC };
       const monthly          = { healthScore, defectsByPriority: monthlyDefects.byPriority };
