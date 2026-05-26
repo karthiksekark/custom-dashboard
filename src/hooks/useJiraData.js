@@ -91,7 +91,7 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
         api.fetchDailyMetrics(year, month, components, ctx),
         api.fetchHealthScore(year, month, components, ctx),
         api.fetchDefectsAlertTable(ctx),
-        api.fetchTabQuarters(year, components, ctx),
+        api.fetchRMQuarters(year, ctx),
         api.fetchPrevMonthHealthScore(year, month, components, ctx),
         api.fetchPrevMonthDefectsTotal(year, month, components, ctx),
       ]);
