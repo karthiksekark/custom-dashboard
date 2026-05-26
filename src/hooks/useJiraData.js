@@ -86,7 +86,7 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
         setLoading(false);
       }
 
-      const [defects, daily, health, defectsTable, quarters, prevHealthScore, prevDefectsTotal] = await Promise.all([
+      const settled = await Promise.allSettled([
         api.fetchDefects(year, month, ctx),
         api.fetchDailyMetrics(year, month, components, ctx),
         api.fetchHealthScore(year, month, components, ctx),
@@ -95,6 +95,25 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
         api.fetchPrevMonthHealthScore(year, month, components, ctx),
         api.fetchPrevMonthDefectsTotal(year, month, components, ctx),
       ]);
+
+      // Re-throw auth errors so AppContext can redirect to login
+      for (const r of settled) {
+        if (r.status === 'rejected' &&
+            (r.reason?.code === 'JIRA_AUTH' || r.reason?.code === 'JIRA_FORBIDDEN')) {
+          throw r.reason;
+        }
+      }
+
+      const val = (i, fallback) =>
+        settled[i].status === 'fulfilled' ? settled[i].value : fallback;
+
+      const defects         = val(0, { byPriority: [], byStatus: [] });
+      const daily           = val(1, []);
+      const health          = val(2, null);
+      const defectsTable    = val(3, []);
+      const quarters        = val(4, []);
+      const prevHealthScore = val(5, null);
+      const prevDefectsTotal = val(6, null);
 
       const result = {
         defectsByPriority: defects.byPriority,
