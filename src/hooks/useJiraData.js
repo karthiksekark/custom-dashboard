@@ -87,7 +87,7 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
       }
 
       const [defects, daily, health, defectsTable, quarters, prevHealthScore, prevDefectsTotal] = await Promise.all([
-        api.fetchDefects(year, month, components, ctx),
+        api.fetchDefects(year, month, ctx),
         api.fetchDailyMetrics(year, month, components, ctx),
         api.fetchHealthScore(year, month, components, ctx),
         api.fetchDefectsAlertTable(ctx),

@@ -147,9 +147,15 @@ export async function fetchMonthlyDefects(year, month, components, rcLabels, { s
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
-export async function fetchDefects(year, month, components, { signal } = {}) {
+export async function fetchDefects(year, month, { signal } = {}) {
   const { start, end } = rangeJql(year, month);
-  const jql  = `issuetype = Bug${compClause(components)} AND created >= "${start}" AND created <= "${end}" ORDER BY created DESC`;
+  const jql = [
+    'project = PRODDEF',
+    'status not in (Cancelled, "On Hold")',
+    '"Release Version" is not EMPTY',
+    `created >= "${start}"`,
+    `created < "${end}"`,
+  ].join(' AND ') + ' ORDER BY due DESC';
   const data = await jqlSearch(jql, { signal });
 
   if (data.total > data.issues.length) {
@@ -481,7 +487,7 @@ export async function fetchPrevMonthHealthScore(year, month, components, ctx) {
 export async function fetchPrevMonthDefectsTotal(year, month, components, ctx) {
   const prevMonth = month === '01' ? '12' : String(Number(month) - 1).padStart(2, '0');
   const prevYear  = month === '01' ? String(Number(year) - 1) : year;
-  const data = await fetchDefects(prevYear, prevMonth, components, ctx);
+  const data = await fetchDefects(prevYear, prevMonth, ctx);
   return data.byPriority.reduce((s, d) => s + (d.value || 0), 0);
 }
 
