@@ -222,7 +222,7 @@ export async function fetchDailyMetrics(year, month, components, { signal } = {}
 
   const data = await jqlSearch(jql, {
     signal,
-    fields: ['priority', 'status', 'created', 'duedate', 'customfield_41817'],
+    fields: ['priority', 'status', 'created', 'duedate', 'resolutiondate', 'customfield_41817'],
   });
 
   if (data.total > data.issues.length) {
@@ -245,7 +245,9 @@ export async function fetchDailyMetrics(year, month, components, { signal } = {}
 
     if (!dateKey || !dateKey.startsWith(monthPrefix)) return;
 
-    if (!byDate[dateKey]) byDate[dateKey] = { date: dateKey, t: 0, d: 0, c: 0, h: 0, m: 0, l: 0, closedT: 0 };
+    if (!byDate[dateKey]) {
+      byDate[dateKey] = { date: dateKey, t: 0, d: 0, c: 0, h: 0, m: 0, l: 0, closedT: 0, chTotal: 0, chLate: 0 };
+    }
     const row   = byDate[dateKey];
     const isBug = issue.key.startsWith('PRODDEF-') &&
                   issue.fields?.customfield_41817?.value?.includes('Content ' + dateKey);
@@ -258,6 +260,17 @@ export async function fetchDailyMetrics(year, month, components, { signal } = {}
       else if (p === 'High')     row.h += 1;
       else if (p === 'Medium')   row.m += 1;
       else if (p === 'Low')      row.l += 1;
+
+      // Health score: failure rate for Critical+High defects vs 8AM EST cutoff
+      if (p === 'Critical' || p === 'High') {
+        row.chTotal += 1;
+        const [dm, dd]  = dateKey.split('/').map(Number);
+        const cutoff    = moment.tz({ year: Number(year), month: dm - 1, date: dd, hour: 8, minute: 0 }, EST);
+        const resolved  = issue.fields.resolutiondate;
+        if (!resolved || moment(resolved).tz(EST).isAfter(cutoff)) {
+          row.chLate += 1;
+        }
+      }
     }
     if (['Done', 'Closed', 'Resolved'].includes(issue.fields.status?.name)) row.closedT += 1;
   });
@@ -267,7 +280,7 @@ export async function fetchDailyMetrics(year, month, components, { signal } = {}
       ...row,
       c:  row.c || null,
       l:  row.l || null,
-      hs: row.t > 0 ? parseFloat(((row.closedT / row.t) * 100).toFixed(2)) : null,
+      hs: row.chTotal > 0 ? parseFloat(((row.chLate / row.chTotal) * 100).toFixed(2)) : null,
     }))
     .sort((a, b) => {
       const [am, ad] = a.date.split('/').map(Number);
