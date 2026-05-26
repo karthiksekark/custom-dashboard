@@ -421,10 +421,35 @@ export async function fetchTabQuarters(year, components, { signal } = {}) {
   });
 }
 
-export async function fetchDefectsAlertTable(components, { signal } = {}) {
-  const today = moment().tz(EST).format('YYYY-MM-DD');
-  const jql   = `issuetype = Bug AND status not in (Done, Closed, Resolved)${compClause(components)} AND created <= "${today}"`;
-  const data  = await jqlSearch(jql, { signal });
+export async function fetchDefectsAlertTable({ signal } = {}) {
+  const today    = moment().tz(EST).format('YYYY-MM-DD');
+  const tomorrow = moment().tz(EST).add(1, 'day').format('YYYY-MM-DD');
+
+  const rcExclude = [
+    'Unable to reproduce(Unknown RCA)',
+    'Clarification only',
+    'Expired Promo',
+    'Invalid Test Case /Test Data Issue',
+    'Inventory Issue',
+    'Working as designed',
+    'GTS Technical requirement/gap',
+    'Duplicate',
+    'Rejected (PRODDEF Admin use only).',
+    'Enhancement- (Missed Requirement/ Requirement gap)',
+  ].map(v => `"${v}"`).join(', ');
+
+  const jql = [
+    'project = PRODDEF',
+    'status not in (Cancelled, "On Hold")',
+    '"Release Version" is not EMPTY',
+    `created >= "${today}"`,
+    `created < "${tomorrow}"`,
+    `("Root Cause_3" not in (${rcExclude}) OR "Root Cause_3" is EMPTY)`,
+    `("Date Resolved" >= "${today} 08:00" OR "Date Resolved" is EMPTY OR "Resolved" is EMPTY)`,
+    'ORDER BY due DESC',
+  ].join(' AND ');
+
+  const data = await jqlSearch(jql, { signal });
 
   const byStatus = {};
   data.issues.forEach(issue => {
