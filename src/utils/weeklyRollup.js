@@ -22,6 +22,7 @@ function buildRollup(rows) {
     t: sum('t'), d: sum('d'),
     c: sum('c'), h: sum('h'), m: sum('m'), l: sum('l'),
     rg: sum('rg'), fp: sum('fp'), dp: sum('dp'),
+    rvMismatch: sum('rvMismatch'),
     hs,
   };
 }
