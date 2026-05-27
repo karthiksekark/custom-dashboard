@@ -89,10 +89,10 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
       const settled = await Promise.allSettled([
         api.fetchDefects(year, month, ctx),
         api.fetchDailyMetrics(year, month, components, ctx),
-        api.fetchHealthScore(year, month, components, ctx),
+        api.fetchRMHealthScore(components, ctx),
         api.fetchDefectsAlertTable(ctx),
         api.fetchRMQuarters(year, ctx),
-        api.fetchPrevMonthHealthScore(year, month, components, ctx),
+        api.fetchPrevMonthRMHealthScore(year, month, components, ctx),
         api.fetchPrevMonthDefectsTotal(year, month, components, ctx),
       ]);
 
