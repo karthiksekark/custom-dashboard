@@ -16,7 +16,7 @@ export const RC_EXCLUDE_VALUES = [
   'Working as designed',
   'GTS Technical requirement/gap',
   'Duplicate',
-  'Rejected (PRODDEF Admin use only)',
+  'Rejected (PRODDEF Admin use only) ',
   'Enhancement- (Missed Requirement/ Requirement gap)',
 ];
 export const RC_EXCLUDE_JQL = RC_EXCLUDE_VALUES.map(v => `"${v}"`).join(', ');
