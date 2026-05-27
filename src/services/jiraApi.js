@@ -201,10 +201,11 @@ export async function fetchDailyMetrics(year, month, components, { signal } = {}
   const { start, end } = rangeJql(year, month);
   const today           = moment().tz(EST).format('YYYY-MM-DD');
   const isCurrentMonth  = moment().tz(EST).format('MM');
-  const modifiedEndDate = moment(isCurrentMonth === month ? today : end)
+  const modifiedEndDate     = moment(isCurrentMonth === month ? today : end)
     .tz(EST)
     .add(isCurrentMonth === month ? 0 : 1, 'days')
     .format('YYYY-MM-DD');
+  const modifiedEndDateNext = moment(modifiedEndDate).add(1, 'day').format('YYYY-MM-DD');
 
   const jql = [
     '((project = DOPMO',
@@ -218,7 +219,7 @@ export async function fetchDailyMetrics(year, month, components, { signal } = {}
     'AND status not in (Cancelled, "On Hold")',
     'AND "Release Version" is not EMPTY',
     `AND created >= "${moment(start).tz(EST).subtract(1, 'days').format('YYYY-MM-DD')}"`,
-    `AND created <= "${modifiedEndDate}"`,
+    `AND created < "${modifiedEndDateNext}"`,
     'AND priority in ("Critical", "High", "Medium", "Low")))',
   ].join(' ') + ' ORDER BY created DESC';
 
