@@ -1,5 +1,5 @@
 import moment from 'moment-timezone';
-import { compClause, rangeJql } from '../utils/jqlUtils';
+import { compClause, rangeJql, RC_EXCLUDE_VALUES, RC_EXCLUDE_JQL } from '../utils/jqlUtils';
 import { TEAMS } from '../config/teams.config';
 
 const JIRA_BASE   = import.meta.env.VITE_JIRA_BASE_URL || '';
@@ -113,21 +113,7 @@ function jqlSearch(jql, { signal, fields } = {}) {
   });
 }
 
-// Root cause values excluded from health score and defect alert table
-const RC_EXCLUDE_VALUES = [
-  'Unable to reproduce(Unknown RCA)',
-  'Clarification only',
-  'Expired Promo',
-  'Invalid Test Case /Test Data Issue',
-  'Inventory Issue',
-  'Working as designed',
-  'GTS Technical requirement/gap',
-  'Duplicate',
-  'Rejected (PRODDEF Admin use only).',
-  'Enhancement- (Missed Requirement/ Requirement gap)',
-];
 const RC_EXCLUDE_SET = new Set(RC_EXCLUDE_VALUES);
-const RC_EXCLUDE_JQL = RC_EXCLUDE_VALUES.map(v => `"${v}"`).join(', ');
 
 // ── Aggregation helpers ───────────────────────────────────────────────────────
 const PRIORITIES = ['Critical', 'High', 'Medium', 'Low'];

@@ -20,7 +20,7 @@ function computeTotals(rows) {
   );
 }
 
-export default function DefectsAlertTable({ rows, todayIso, components }) {
+export default function DefectsAlertTable({ rows, todayIso }) {
   const totals = computeTotals(rows);
 
   return (
@@ -42,13 +42,13 @@ export default function DefectsAlertTable({ rows, todayIso, components }) {
               </td>
               {PRIORITIES.map(p => (
                 <td key={p.key} className="data-table__td data-table__td--center">
-                  <JiraLink href={defectStatusPriorityLink(r.status, p.jiraName, todayIso, components)}>
+                  <JiraLink href={r[p.key] > 0 ? defectStatusPriorityLink(r.status, p.jiraName, todayIso) : null}>
                     <Chip value={r[p.key]} color={p.color} />
                   </JiraLink>
                 </td>
               ))}
               <td className="data-table__td data-table__td--center">
-                <JiraLink href={defectStatusPriorityLink(r.status, null, todayIso, components)}>
+                <JiraLink href={r.total > 0 ? defectStatusPriorityLink(r.status, null, todayIso) : null}>
                   <Chip value={r.total} color="#0369a1" />
                 </JiraLink>
               </td>
@@ -60,13 +60,13 @@ export default function DefectsAlertTable({ rows, todayIso, components }) {
             <td className="data-table__tfoot-cell data-table__tfoot-cell--label">All Statuses</td>
             {PRIORITIES.map(p => (
               <td key={p.key} className="data-table__tfoot-cell data-table__tfoot-cell--center">
-                <JiraLink href={defectConsolidatedLink(p.jiraName, todayIso, components)}>
+                <JiraLink href={totals[p.key] > 0 ? defectConsolidatedLink(p.jiraName, todayIso) : null}>
                   <Chip value={totals[p.key]} color={p.color} />
                 </JiraLink>
               </td>
             ))}
             <td className="data-table__tfoot-cell data-table__tfoot-cell--center">
-              <JiraLink href={defectConsolidatedLink(null, todayIso, components)}>
+              <JiraLink href={totals.total > 0 ? defectConsolidatedLink(null, todayIso) : null}>
                 <Chip value={totals.total} color="#0369a1" />
               </JiraLink>
             </td>
@@ -85,14 +85,14 @@ export default function DefectsAlertTable({ rows, todayIso, components }) {
             {PRIORITIES.map(p => (
               <div key={p.key} className="card-list__row">
                 <span className="card-list__key">{p.label}</span>
-                <JiraLink href={defectStatusPriorityLink(r.status, p.jiraName, todayIso, components)}>
+                <JiraLink href={r[p.key] > 0 ? defectStatusPriorityLink(r.status, p.jiraName, todayIso) : null}>
                   <Chip value={r[p.key]} color={p.color} />
                 </JiraLink>
               </div>
             ))}
             <div className="card-list__row">
               <span className="card-list__key">Total</span>
-              <JiraLink href={defectStatusPriorityLink(r.status, null, todayIso, components)}>
+              <JiraLink href={r.total > 0 ? defectStatusPriorityLink(r.status, null, todayIso) : null}>
                 <Chip value={r.total} color="#0369a1" />
               </JiraLink>
             </div>
@@ -104,14 +104,14 @@ export default function DefectsAlertTable({ rows, todayIso, components }) {
           {PRIORITIES.map(p => (
             <div key={p.key} className="card-list__row">
               <span className="card-list__key">{p.label}</span>
-              <JiraLink href={defectConsolidatedLink(p.jiraName, todayIso, components)}>
+              <JiraLink href={totals[p.key] > 0 ? defectConsolidatedLink(p.jiraName, todayIso) : null}>
                 <Chip value={totals[p.key]} color={p.color} />
               </JiraLink>
             </div>
           ))}
           <div className="card-list__row card-list__row--total">
             <span className="card-list__key">Total</span>
-            <JiraLink href={defectConsolidatedLink(null, todayIso, components)}>
+            <JiraLink href={totals.total > 0 ? defectConsolidatedLink(null, todayIso) : null}>
               <Chip value={totals.total} color="#0369a1" />
             </JiraLink>
           </div>
@@ -122,7 +122,6 @@ export default function DefectsAlertTable({ rows, todayIso, components }) {
 }
 
 DefectsAlertTable.propTypes = {
-  rows:       PropTypes.arrayOf(PropTypes.object).isRequired,
-  todayIso:   PropTypes.string,
-  components: PropTypes.string,
+  rows:     PropTypes.arrayOf(PropTypes.object).isRequired,
+  todayIso: PropTypes.string,
 };

@@ -1,4 +1,5 @@
-import { compClause, rangeJql } from '../utils/jqlUtils';
+import moment from 'moment-timezone';
+import { compClause, rangeJql, RC_EXCLUDE_JQL } from '../utils/jqlUtils';
 
 const JIRA_BASE = import.meta.env.VITE_JIRA_BASE_URL   || '';
 const PROJECT   = import.meta.env.VITE_JIRA_PROJECT_KEY || null;
@@ -43,16 +44,27 @@ export function implConsolidatedFieldLink(field, todayIso) {
 }
 
 // ── Defects-alert table ───────────────────────────────────────────────────────
-export function defectStatusPriorityLink(status, priority, todayIso, components) {
-  const comp     = compClause(components);
-  const prClause = priority ? ` AND priority = "${priority}"` : '';
-  return buildUrl(`issuetype = Bug${comp} AND status = "${status}"${prClause} AND created <= "${todayIso}"`);
+function defectAlertBaseJql(todayIso) {
+  const tomorrow = moment(todayIso).add(1, 'day').format('YYYY-MM-DD');
+  return [
+    'project = PRODDEF',
+    'status not in (Cancelled, "On Hold")',
+    '"Release Version" is not EMPTY',
+    `created >= "${todayIso}"`,
+    `created < "${tomorrow}"`,
+    `("Root Cause_3" not in (${RC_EXCLUDE_JQL}) OR "Root Cause_3" is EMPTY)`,
+    `("Date Resolved" >= "${todayIso} 08:00" OR "Date Resolved" is EMPTY OR "Resolved" is EMPTY)`,
+  ].join(' AND ');
 }
 
-export function defectConsolidatedLink(priority, todayIso, components) {
-  const comp     = compClause(components);
+export function defectStatusPriorityLink(status, priority, todayIso) {
   const prClause = priority ? ` AND priority = "${priority}"` : '';
-  return buildUrl(`issuetype = Bug${comp} AND status in (Open, "In Progress", Reopened, "Pending Review")${prClause} AND created <= "${todayIso}"`);
+  return buildUrl(`${defectAlertBaseJql(todayIso)} AND status = "${status}"${prClause}`);
+}
+
+export function defectConsolidatedLink(priority, todayIso) {
+  const prClause = priority ? ` AND priority = "${priority}"` : '';
+  return buildUrl(`${defectAlertBaseJql(todayIso)}${prClause}`);
 }
 
 // ── Daily metrics table ───────────────────────────────────────────────────────

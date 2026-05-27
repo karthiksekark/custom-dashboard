@@ -6,6 +6,21 @@ export const APP_TIMEZONE = 'America/New_York';
 export const CLOSED_STATUSES = ['Done', 'Closed', 'Resolved'];
 export const PRIORITY_LIST   = ['Critical', 'High', 'Medium', 'Low'];
 
+// Root cause values excluded from health score and defect alert table
+export const RC_EXCLUDE_VALUES = [
+  'Unable to reproduce(Unknown RCA)',
+  'Clarification only',
+  'Expired Promo',
+  'Invalid Test Case /Test Data Issue',
+  'Inventory Issue',
+  'Working as designed',
+  'GTS Technical requirement/gap',
+  'Duplicate',
+  'Rejected (PRODDEF Admin use only).',
+  'Enhancement- (Missed Requirement/ Requirement gap)',
+];
+export const RC_EXCLUDE_JQL = RC_EXCLUDE_VALUES.map(v => `"${v}"`).join(', ');
+
 /**
  * Builds AND component in ("A","B") clause from a comma-separated string.
  * Returns empty string if components is blank/undefined.
