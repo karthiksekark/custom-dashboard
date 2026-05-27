@@ -251,7 +251,7 @@ export async function fetchDailyMetrics(year, month, components, { signal } = {}
       const [dm, dd] = dateKey.split('/').map(Number);
       byDate[dateKey] = {
         date: dateKey, t: 0, d: 0, c: 0, h: 0, m: 0, l: 0, closedT: 0,
-        cTotal: 0, cLate: 0, hTotal: 0, hLate: 0,
+        cLate: 0, hLate: 0,
         // precompute 8AM EST cutoff for this date once, reused for every C/H defect
         _cutoff: moment.tz({ year: Number(year), month: dm - 1, date: dd, hour: 8, minute: 0 }, EST),
       };
@@ -269,16 +269,14 @@ export async function fetchDailyMetrics(year, month, components, { signal } = {}
       else if (p === 'Medium')   row.m += 1;
       else if (p === 'Low')      row.l += 1;
 
-      // Health score: weighted failure rate for C+H defects resolved after 8AM EST.
-      // Defects with an excluded root cause (customfield_44301) are skipped.
-      // Critical failures count double: hs = (cLate*2 + hLate) / (cTotal*2 + hTotal) * 100
+      // Health score: hs = 100 - (cLate*35 + hLate*15) / (t*10), RC_EXCLUDE applied
       if (p === 'Critical' || p === 'High') {
         const rc = issue.fields?.customfield_44301?.value;
         if (!rc || !RC_EXCLUDE_SET.has(rc)) {
           const resolved = issue.fields.resolutiondate;
           const isLate   = !resolved || moment(resolved).tz(EST).isAfter(row._cutoff);
-          if (p === 'Critical') { row.cTotal += 1; if (isLate) row.cLate += 1; }
-          else                  { row.hTotal += 1; if (isLate) row.hLate += 1; }
+          if (p === 'Critical') { if (isLate) row.cLate += 1; }
+          else                  { if (isLate) row.hLate += 1; }
         }
       }
     }
@@ -287,13 +285,12 @@ export async function fetchDailyMetrics(year, month, components, { signal } = {}
 
   return Object.values(byDate)
     // eslint-disable-next-line no-unused-vars
-    .map(({ _cutoff, cTotal, cLate, hTotal, hLate, closedT, ...row }) => {
-      const w = cTotal * 2 + hTotal;
+    .map(({ _cutoff, cLate, hLate, closedT, ...row }) => {
       return {
         ...row,
         c:  row.c || null,
         l:  row.l || null,
-        hs: w > 0 ? parseFloat(((cLate * 2 + hLate) / w * 100).toFixed(2)) : null,
+        hs: row.t > 0 ? parseFloat((100 - (cLate * 35 + hLate * 15) / (row.t * 10)).toFixed(2)) : null,
       };
     })
     .sort((a, b) => {
@@ -571,7 +568,7 @@ export async function fetchRMQuarters(year, { signal } = {}) {
 
     const dopmoDateSet = new Set();
     let tickets = 0, defects = 0, c = 0, h = 0, m = 0, l = 0;
-    let cTotal = 0, cLate = 0, hTotal = 0, hLate = 0;
+    let cLate = 0, hLate = 0;
     const cutoffCache = new Map();
 
     issues.forEach(issue => {
@@ -604,14 +601,13 @@ export async function fetchRMQuarters(year, { signal } = {}) {
           }
           const isLate = !issue.fields.resolutiondate ||
                          moment(issue.fields.resolutiondate).tz(EST).isAfter(cutoffCache.get(dateKey));
-          if (p === 'Critical') { cTotal += 1; if (isLate) cLate += 1; }
-          else                  { hTotal += 1; if (isLate) hLate += 1; }
+          if (p === 'Critical') { if (isLate) cLate += 1; }
+          else                  { if (isLate) hLate += 1; }
         }
       }
     });
 
-    const w  = cTotal * 2 + hTotal;
-    const hs = w > 0 ? parseFloat(((cLate * 2 + hLate) / w * 100).toFixed(2)) : null;
+    const hs = tickets > 0 ? parseFloat((100 - (cLate * 35 + hLate * 15) / (tickets * 10)).toFixed(2)) : null;
     return { q, period, days: dopmoDateSet.size, tickets, defects, c, h, m, l, hs, acc, startDate, endDate };
   });
 }
