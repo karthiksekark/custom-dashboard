@@ -19,6 +19,15 @@ function rowDateToIso(dateStr, year) {
   return `${year}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
 }
 
+// Returns  AND component not in ("A","B")  from a comma-separated string
+function notCompClause(components) {
+  if (!components?.trim()) return '';
+  const names = components.split(',').map(c => c.trim()).filter(Boolean);
+  if (!names.length) return '';
+  const safe = names.map(n => `"${n.replace(/"/g, '\\"')}"`);
+  return ` AND component not in (${safe.join(', ')})`;
+}
+
 // ── Implementation table ──────────────────────────────────────────────────────
 const IMPL_TYPE_CLAUSE = {
   UAT:    'component in ("DIGOPS/UAT")',
@@ -41,6 +50,14 @@ export function implConsolidatedFieldLink(field, todayIso) {
   const typeClause = IMPL_TYPE_CLAUSE[field];
   if (!typeClause) return null;
   return buildUrl(`${IMPL_BASE_JQL} AND due = "${todayIso}" AND ${typeClause}`);
+}
+
+// "Other" team row: exclude all non-RM team defaultComponents so only truly unowned tickets appear
+export function implOtherTeamFieldLink(field, todayIso, excludeComps) {
+  const typeClause = IMPL_TYPE_CLAUSE[field];
+  if (!typeClause) return null;
+  const notComp = notCompClause(excludeComps);
+  return buildUrl(`${IMPL_BASE_JQL}${notComp} AND due = "${todayIso}" AND ${typeClause}`);
 }
 
 // ── Defects-alert table ───────────────────────────────────────────────────────

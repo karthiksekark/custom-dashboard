@@ -57,7 +57,7 @@ export default function DefectsAlertTable({ rows, todayIso }) {
         </tbody>
         <tfoot>
           <tr className="data-table__foot-row data-table__foot-row--consolidated data-table__foot-row--alert">
-            <td className="data-table__tfoot-cell data-table__tfoot-cell--label">All Statuses</td>
+            <td className="data-table__tfoot-cell data-table__tfoot-cell--label">Total</td>
             {PRIORITIES.map(p => (
               <td key={p.key} className="data-table__tfoot-cell data-table__tfoot-cell--center">
                 <JiraLink href={totals[p.key] > 0 ? defectConsolidatedLink(p.jiraName, todayIso) : null}>
@@ -100,7 +100,7 @@ export default function DefectsAlertTable({ rows, todayIso }) {
         ))}
         {/* Consolidated total card */}
         <div className="card-list__item card-list__item--consolidated card-list__item--alert">
-          <div className="card-list__title card-list__title--consolidated">All Statuses</div>
+          <div className="card-list__title card-list__title--consolidated">Total</div>
           {PRIORITIES.map(p => (
             <div key={p.key} className="card-list__row">
               <span className="card-list__key">{p.label}</span>
