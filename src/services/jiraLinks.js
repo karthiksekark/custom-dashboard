@@ -141,11 +141,15 @@ export function rmDailyTicketsLink(dateStr, year) {
 }
 
 export function rmDailyDefectsLink(dateStr, year) {
-  return buildUrl(`${RM_PRODDEF_BASE} AND "Release Version" = "${toReleaseVersion(dateStr, year)}"`);
+  const iso     = rowDateToIso(dateStr, year);
+  const nextDay = moment(iso).add(1, 'day').format('YYYY-MM-DD');
+  return buildUrl(`${RM_PRODDEF_BASE} AND created >= "${iso}" AND created < "${nextDay}"`);
 }
 
 export function rmDailyPriorityLink(dateStr, year, priority) {
-  return buildUrl(`${RM_PRODDEF_BASE} AND "Release Version" = "${toReleaseVersion(dateStr, year)}" AND priority = "${priority}"`);
+  const iso     = rowDateToIso(dateStr, year);
+  const nextDay = moment(iso).add(1, 'day').format('YYYY-MM-DD');
+  return buildUrl(`${RM_PRODDEF_BASE} AND created >= "${iso}" AND created < "${nextDay}" AND priority = "${priority}"`);
 }
 
 export function rmMonthlyTicketsLink(year, month) {
