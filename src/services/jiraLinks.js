@@ -185,8 +185,9 @@ export function quarterPriorityLink(qStart, qEnd, priority, components) {
 
 // Health score: late/unresolved C+H PRODDEF defects (not resolved before 8AM EST)
 export function rmDailyHealthScoreLink(dateStr, year) {
-  const iso = rowDateToIso(dateStr, year);
-  return buildUrl(`${RM_HS_BASE} AND ("Date Resolved" >= "${iso} 08:00" OR "Date Resolved" is EMPTY) AND created = "${iso}"`);
+  const iso     = rowDateToIso(dateStr, year);
+  const nextDay = moment(iso).add(1, 'day').format('YYYY-MM-DD');
+  return buildUrl(`${RM_HS_BASE} AND ("Date Resolved" >= "${iso} 08:00" OR "Date Resolved" is EMPTY) AND created >= "${iso}" AND created < "${nextDay}"`);
 }
 
 export function rmMonthlyHealthScoreLink(year, month) {
