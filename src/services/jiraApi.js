@@ -365,13 +365,11 @@ export async function fetchRMHealthScore(components, { signal } = {}) {
 
 export async function fetchRMMonthlyHealthScore(year, month, components, { signal } = {}) {
   const { start, end } = rangeJql(year, month);
-  const isCurrentMonth      = moment().tz(EST).format('MM');
-  const today               = moment().tz(EST).format('YYYY-MM-DD');
-  const modifiedEndDate     = moment(isCurrentMonth === month ? today : end)
+  const isCurrentMonth  = moment().tz(EST).format('MM');
+  const today           = moment().tz(EST).format('YYYY-MM-DD');
+  const modifiedEndDate = moment(isCurrentMonth === month ? today : end)
     .tz(EST).add(isCurrentMonth === month ? 0 : 1, 'days').format('YYYY-MM-DD');
-  const modifiedEndDateNext = moment(modifiedEndDate).add(1, 'day').format('YYYY-MM-DD');
-  const monthPrefix         = moment(month, 'MM').tz(EST).format('M/');
-  const proddefStart        = moment(start).tz(EST).subtract(1, 'days').format('YYYY-MM-DD');
+  const monthPrefix     = moment(month, 'MM').tz(EST).format('M/');
 
   const jql = [
     RM_HS_DOPMO_BASE,
@@ -379,8 +377,8 @@ export async function fetchRMMonthlyHealthScore(year, month, components, { signa
     `AND due < "${modifiedEndDate}"`,
     'AND issuetype not in (Task))',
     RM_HS_PRODDEF_BASE,
-    `AND created >= "${proddefStart}"`,
-    `AND created < "${modifiedEndDateNext}"`,
+    `AND created >= "${start}"`,
+    `AND created < "${modifiedEndDate}"`,
     'AND priority in ("Critical", "High", "Medium", "Low")))',
   ].join(' ');
 
