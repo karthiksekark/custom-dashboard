@@ -376,7 +376,7 @@ export async function fetchRMMonthlyHealthScore(year, month, components, { signa
   const jql = [
     RM_HS_DOPMO_BASE,
     `AND due >= "${start}"`,
-    `AND due <= "${modifiedEndDate}"`,
+    `AND due < "${modifiedEndDate}"`,
     'AND issuetype not in (Task))',
     RM_HS_PRODDEF_BASE,
     `AND created >= "${proddefStart}"`,
