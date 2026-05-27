@@ -8,9 +8,11 @@ import {
   rmDailyTicketsLink,
   rmDailyDefectsLink,
   rmDailyPriorityLink,
+  rmDailyHealthScoreLink,
   rmMonthlyTicketsLink,
   rmMonthlyDefectsLink,
   rmMonthlyPriorityLink,
+  rmMonthlyHealthScoreLink,
 } from '../../services/jiraLinks';
 import { groupByWeek } from '../../utils/weeklyRollup';
 import './Tables.scss';
@@ -181,12 +183,14 @@ export default function DailyMetricsTable({ rows, totals, year, month }) {
                   </td>
                 ))}
                 <td className="data-table__td data-table__td--health">
-                  <div className="health-bar" style={{ '--hc': hc }}>
-                    <div className="health-bar__track">
-                      <div className="health-bar__fill" style={{ width: `${r.hs ?? 0}%` }} />
+                  <JiraLink href={r.hs !== null && r.hs < 100 ? rmDailyHealthScoreLink(r.date, year) : null}>
+                    <div className="health-bar" style={{ '--hc': hc }}>
+                      <div className="health-bar__track">
+                        <div className="health-bar__fill" style={{ width: `${r.hs ?? 0}%` }} />
+                      </div>
+                      <span className="health-bar__val">{r.hs}</span>
                     </div>
-                    <span className="health-bar__val">{r.hs}</span>
-                  </div>
+                  </JiraLink>
                 </td>
               </tr>
             );
@@ -214,7 +218,11 @@ export default function DailyMetricsTable({ rows, totals, year, month }) {
                   </JiraLink>
                 </td>
               ))}
-              <td className="data-table__tfoot-cell data-table__tfoot-cell--hs">{totals.hs}</td>
+              <td className="data-table__tfoot-cell data-table__tfoot-cell--hs">
+                <JiraLink href={totals.hs !== null && totals.hs < 100 ? rmMonthlyHealthScoreLink(year, month) : null} plain>
+                  {totals.hs}
+                </JiraLink>
+              </td>
             </tr>
           </tfoot>
         )}
@@ -276,7 +284,9 @@ export default function DailyMetricsTable({ rows, totals, year, month }) {
               ))}
               <div className="card-list__row">
                 <span className="card-list__key">Health Score</span>
-                <span className="card-list__health-val" style={{ '--hc': hc }}>{r.hs ?? '—'}</span>
+                <JiraLink href={r.hs !== null && r.hs < 100 ? rmDailyHealthScoreLink(r.date, year) : null}>
+                  <span className="card-list__health-val" style={{ '--hc': hc }}>{r.hs ?? '—'}</span>
+                </JiraLink>
               </div>
             </div>
           );

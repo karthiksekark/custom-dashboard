@@ -8,6 +8,7 @@ import {
   rmQuarterTicketsLink,
   rmQuarterDefectsLink,
   rmQuarterPriorityLink,
+  rmQuarterHealthScoreLink,
 } from '../../services/jiraLinks';
 import './QuarterCard.scss';
 
@@ -34,7 +35,7 @@ export default function QuarterCard({ quarter, isActive }) {
     { label: 'High',          val: empty ? '—' : h,       link: h > 0       ? rmQuarterPriorityLink(startDate, endDate, 'High') : null,         color: '#ea580c'  },
     { label: 'Medium',        val: empty ? '—' : m,       link: m > 0       ? rmQuarterPriorityLink(startDate, endDate, 'Medium') : null,       color: '#ca8a04'  },
     { label: 'Low',           val: empty ? '—' : l,       link: l > 0       ? rmQuarterPriorityLink(startDate, endDate, 'Low') : null,          color: '#0284c7'  },
-    { label: 'Avg. Health',   val: empty ? '—' : hs,      link: null,                                                                           color: hc         },
+    { label: 'Avg. Health',   val: empty ? '—' : hs,      link: hs !== null && hs < 100 ? rmQuarterHealthScoreLink(startDate, endDate) : null, color: hc         },
   ];
 
   const modifiers = [
@@ -69,12 +70,14 @@ export default function QuarterCard({ quarter, isActive }) {
           <span className="quarter-card__label">{label}</span>
 
           {label === 'Avg. Health' && !empty ? (
-            <div className="quarter-card__health">
-              <div className="quarter-card__bar">
-                <div className="quarter-card__fill" style={{ width: `${val}%` }} />
+            <JiraLink href={link}>
+              <div className="quarter-card__health">
+                <div className="quarter-card__bar">
+                  <div className="quarter-card__fill" style={{ width: `${val}%` }} />
+                </div>
+                <span className="quarter-card__health-val">{val}</span>
               </div>
-              <span className="quarter-card__health-val">{val}</span>
-            </div>
+            </JiraLink>
           ) : (
             <JiraLink href={!empty ? link : null}>
               <span

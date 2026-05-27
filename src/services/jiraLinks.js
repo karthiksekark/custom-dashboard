@@ -111,6 +111,9 @@ const RM_DOPMO_BASE = 'project = DOPMO AND (component in ("DIGOPS/UAT","DIGOPS/O
 // PRODDEF base: status/Release Version conditions matching fetchDailyMetrics
 const RM_PRODDEF_BASE = 'project = PRODDEF AND status not in (Cancelled, "On Hold") AND "Release Version" is not EMPTY AND priority in ("Critical", "High", "Medium", "Low")';
 
+// Health score link base: C+H PRODDEF defects with RC_EXCLUDE applied
+const RM_HS_BASE = `project = PRODDEF AND status not in (Cancelled, "On Hold") AND "Release Version" is not EMPTY AND priority in ("Critical", "High") AND ("Root Cause_3" not in (${RC_EXCLUDE_JQL}) OR "Root Cause_3" is EMPTY)`;
+
 // Convert M/D dateStr + 4-digit year → "Content M/D/YY" (Release Version field value)
 function toReleaseVersion(dateStr, year) {
   return `Content ${dateStr}/${year.slice(-2)}`;
@@ -157,6 +160,21 @@ export function quarterTotalDefectsLink(qStart, qEnd, components) {
 export function quarterPriorityLink(qStart, qEnd, priority, components) {
   const comp = compClause(components);
   return buildUrl(`issuetype = Bug${comp} AND priority = "${priority}" AND created >= "${qStart}" AND created <= "${qEnd}"`);
+}
+
+// Health score: late/unresolved C+H PRODDEF defects (not resolved before 8AM EST)
+export function rmDailyHealthScoreLink(dateStr, year) {
+  const iso = rowDateToIso(dateStr, year);
+  return buildUrl(`${RM_HS_BASE} AND ("Date Resolved" >= "${iso} 08:00" OR "Date Resolved" is EMPTY) AND created = "${iso}"`);
+}
+
+export function rmMonthlyHealthScoreLink(year, month) {
+  const { start, end } = rangeJql(year, month);
+  return buildUrl(`${RM_HS_BASE} AND "Date Resolved" is EMPTY AND created >= "${start}" AND created <= "${end}"`);
+}
+
+export function rmQuarterHealthScoreLink(startDate, endDate) {
+  return buildUrl(`${RM_HS_BASE} AND "Date Resolved" is EMPTY AND due >= "${startDate}" AND due <= "${endDate}"`);
 }
 
 // ── Release Mgmt quarterly cards ─────────────────────────────────────────────
