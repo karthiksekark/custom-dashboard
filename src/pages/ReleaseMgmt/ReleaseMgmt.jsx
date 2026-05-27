@@ -31,6 +31,40 @@ function quarterDateRange(yearStr, qIndex) {
   return { startDate: start, endDate: end };
 }
 
+// Wraps SectionHeader with a freshness label and refresh button on the right.
+// Reuses .cds__* classes already defined in CurrentDaySection.scss.
+function CardHeader({ eyebrow, title, variant, onRefresh, isRefreshing, lastFetchedAt }) {
+  const fetchedLabel = lastFetchedAt
+    ? `Updated ${lastFetchedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+    : null;
+  return (
+    <div className="cds__header-row">
+      <SectionHeader eyebrow={eyebrow} title={title} variant={variant} />
+      <div className="cds__header-actions">
+        {fetchedLabel && <span className="cds__freshness">{fetchedLabel}</span>}
+        <button
+          className={`cds__refresh-btn${isRefreshing ? ' cds__refresh-btn--loading' : ''}`}
+          onClick={onRefresh}
+          disabled={isRefreshing}
+          aria-label={isRefreshing ? 'Refreshing…' : 'Refresh'}
+          title={isRefreshing ? 'Refreshing…' : 'Refresh'}
+        >
+          {isRefreshing ? '…' : '↻'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+CardHeader.propTypes = {
+  eyebrow:       PropTypes.string.isRequired,
+  title:         PropTypes.string.isRequired,
+  variant:       PropTypes.string,
+  onRefresh:     PropTypes.func.isRequired,
+  isRefreshing:  PropTypes.bool,
+  lastFetchedAt: PropTypes.instanceOf(Date),
+};
+
 export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, dashboardView, activeTab, isFiltered }) {
   const { data, loading, error, usingMock, lastFetchedAt, refresh } = useJiraData({ year, month, components, dashboardView, activeTab, isFiltered });
 
@@ -82,7 +116,7 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
       {isCurrentPeriod ? (
         <div className="release-mgmt__top-grid">
           <Card>
-            <SectionHeader eyebrow="Health Monitor" title="Today's Health Score" />
+            <CardHeader eyebrow="Health Monitor" title="Today's Health Score" onRefresh={refresh} isRefreshing={loading} lastFetchedAt={lastFetchedAt} />
             <div className="release-mgmt__health-body">
               <DoughnutGauge score={data.healthScore} />
               <div className="release-mgmt__health-badge" style={{ '--hc': hc }}>
@@ -98,13 +132,13 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
           </Card>
 
           <Card>
-            <SectionHeader eyebrow="Implementation" title={`Current Day's Tickets — ${todayLabel}`} />
+            <CardHeader eyebrow="Implementation" title={`Current Day's Tickets — ${todayLabel}`} onRefresh={refresh} isRefreshing={loading} lastFetchedAt={lastFetchedAt} />
             <ImplementationTable rows={data.implTickets} todayIso={todayIso} components={components} />
           </Card>
         </div>
       ) : (
         <Card>
-          <SectionHeader eyebrow="Health Monitor" title="Today's Health Score" />
+          <CardHeader eyebrow="Health Monitor" title="Today's Health Score" onRefresh={refresh} isRefreshing={loading} lastFetchedAt={lastFetchedAt} />
           <div className="release-mgmt__health-body">
             <DoughnutGauge score={data.healthScore} />
             <div className="release-mgmt__health-badge" style={{ '--hc': hc }}>
@@ -123,14 +157,14 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
       {/* ── Row 2: Defects alert (current period only) ── */}
       {isCurrentPeriod && (
         <Card variant="alert">
-          <SectionHeader eyebrow="&#9888; Alert" title={`Defects Not Closed before 8am — ${todayLabel}`} variant="alert" />
+          <CardHeader eyebrow="&#9888; Alert" title={`Defects Not Closed before 8am — ${todayLabel}`} variant="alert" onRefresh={refresh} isRefreshing={loading} lastFetchedAt={lastFetchedAt} />
           <DefectsAlertTable rows={data.defectsTable} todayIso={todayIso} components={components} />
         </Card>
       )}
 
       {/* ── Row 3: Pie charts ── */}
       <Card>
-        <SectionHeader eyebrow="Analytics" title={`Daily Release Metrics — ${monthLabel}`} />
+        <CardHeader eyebrow="Analytics" title={`Daily Release Metrics — ${monthLabel}`} onRefresh={refresh} isRefreshing={loading} lastFetchedAt={lastFetchedAt} />
         <div className="release-mgmt__charts">
           <PieChartPanel title="Defects by Priority" data={data.defectsByPriority} colors={PRIORITY_COLORS} />
           <PieChartPanel title="Defects by Status"   data={data.defectsByStatus}   colors={STATUS_COLORS}   />
@@ -139,7 +173,7 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
 
       {/* ── Row 4: Daily metrics table ── */}
       <Card>
-        <SectionHeader eyebrow="Detailed Breakdown" title={`Daily Release Metrics — ${monthLabel}`} />
+        <CardHeader eyebrow="Detailed Breakdown" title={`Daily Release Metrics — ${monthLabel}`} onRefresh={refresh} isRefreshing={loading} lastFetchedAt={lastFetchedAt} />
         <DailyMetricsTable
           rows={data.releaseRows}
           totals={data.totals}
@@ -151,7 +185,7 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
 
       {/* ── Row 5: Quarterly overview ── */}
       <Card collapsible>
-        <SectionHeader eyebrow="Quarterly Overview" title={`Quarterly Release Metrics — ${year}`} />
+        <CardHeader eyebrow="Quarterly Overview" title={`Quarterly Release Metrics — ${year}`} onRefresh={refresh} isRefreshing={loading} lastFetchedAt={lastFetchedAt} />
         <div className="release-mgmt__quarters">
           {enrichedQuarters.map((q, i) => (
             <QuarterCard
