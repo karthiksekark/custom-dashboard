@@ -127,6 +127,8 @@ export function monthlyPriorityLink(year, month, priority, components) {
 const RM_DOPMO_BASE = 'project = DOPMO AND (component in ("DIGOPS/UAT","DIGOPS/OPUAT","DIGOPS/CR_UAT") OR summary ~ "BZ VAL" OR summary ~ "BIZ VAL" OR summary ~ "BUSVAL" OR labels in ("bizval")) AND (labels not in ("Lower-Env", Lower_Env) AND labels is not EMPTY) AND status not in (Cancelled, "On Hold", Open) AND issuetype not in (Task)';
 // PRODDEF base: status/Release Version conditions matching fetchDailyMetrics
 const RM_PRODDEF_BASE = 'project = PRODDEF AND status not in (Cancelled, "On Hold") AND "Release Version" is not EMPTY AND priority in ("Critical", "High", "Medium", "Low")';
+// Mismatch base: no priority filter — all PRODDEF with a Release Version set
+const RM_PRODDEF_MISMATCH_BASE = 'project = PRODDEF AND status not in (Cancelled, "On Hold") AND "Release Version" is not EMPTY';
 
 // Health score link base: C+H PRODDEF defects with RC_EXCLUDE applied
 const RM_HS_BASE = `project = PRODDEF AND status not in (Cancelled, "On Hold") AND "Release Version" is not EMPTY AND priority in ("Critical", "High") AND ("Root Cause_3" not in (${RC_EXCLUDE_JQL}) OR "Root Cause_3" is EMPTY)`;
@@ -150,6 +152,12 @@ export function rmDailyPriorityLink(dateStr, year, priority) {
   const iso     = rowDateToIso(dateStr, year);
   const nextDay = moment(iso).add(1, 'day').format('YYYY-MM-DD');
   return buildUrl(`${RM_PRODDEF_BASE} AND created >= "${iso}" AND created < "${nextDay}" AND priority = "${priority}"`);
+}
+
+export function rmDailyRvMismatchLink(dateStr, year) {
+  const iso     = rowDateToIso(dateStr, year);
+  const nextDay = moment(iso).add(1, 'day').format('YYYY-MM-DD');
+  return buildUrl(`${RM_PRODDEF_MISMATCH_BASE} AND created >= "${iso}" AND created < "${nextDay}" AND "Release Version" !~ "${dateStr}/"`);
 }
 
 export function rmMonthlyTicketsLink(year, month) {

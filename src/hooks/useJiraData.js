@@ -13,16 +13,17 @@ import {
 const JIRA_CONFIGURED = !!import.meta.env.VITE_JIRA_BASE_URL;
 
 function buildTotals(rows) {
-  const t  = rows.reduce((s, r) => s + (r.t || 0), 0);
-  const d  = rows.reduce((s, r) => s + (r.d || 0), 0);
-  const c  = rows.reduce((s, r) => s + (r.c || 0), 0);
-  const h  = rows.reduce((s, r) => s + (r.h || 0), 0);
-  const m  = rows.reduce((s, r) => s + (r.m || 0), 0);
-  const l  = rows.reduce((s, r) => s + (r.l || 0), 0);
+  const t          = rows.reduce((s, r) => s + (r.t || 0), 0);
+  const d          = rows.reduce((s, r) => s + (r.d || 0), 0);
+  const c          = rows.reduce((s, r) => s + (r.c || 0), 0);
+  const h          = rows.reduce((s, r) => s + (r.h || 0), 0);
+  const m          = rows.reduce((s, r) => s + (r.m || 0), 0);
+  const l          = rows.reduce((s, r) => s + (r.l || 0), 0);
+  const rvMismatch = rows.reduce((s, r) => s + (r.rvMismatch || 0), 0);
   const hs = rows.length > 0
     ? parseFloat((rows.reduce((s, r) => s + (r.hs || 0), 0) / rows.length).toFixed(2))
     : null;
-  return { t, d, c, h, m, l, hs };
+  return { t, d, c, h, m, l, hs, rvMismatch };
 }
 
 function createEmptyRMData() {
@@ -30,7 +31,7 @@ function createEmptyRMData() {
     defectsByPriority: [],
     defectsByStatus:   [],
     releaseRows:       [],
-    totals:            { t: 0, d: 0, c: 0, h: 0, m: 0, l: 0, hs: null },
+    totals:            { t: 0, d: 0, c: 0, h: 0, m: 0, l: 0, hs: null, rvMismatch: 0 },
     healthScore:       null,
     implTickets:       [],
     defectsTable:      [],

@@ -9,6 +9,7 @@ import {
   rmDailyDefectsLink,
   rmDailyPriorityLink,
   rmDailyHealthScoreLink,
+  rmDailyRvMismatchLink,
   rmMonthlyTicketsLink,
   rmMonthlyDefectsLink,
   rmMonthlyPriorityLink,
@@ -54,10 +55,11 @@ const PRIORITY_DEFS = [
 // Map column label → row field key used for sorting
 const COL_SORT = {
   'Release Date': 'date', 'Total Tickets': 't', 'Total Defects': 'd',
+  'RV Mismatch': 'rvMismatch',
   'Critical': 'c', 'High': 'h', 'Medium': 'm', 'Low': 'l', 'Health Score': 'hs',
 };
 
-const COLS = ['Release Date', 'Total Tickets', 'Total Defects', 'Critical', 'High', 'Medium', 'Low', 'Health Score'];
+const COLS = ['Release Date', 'Total Tickets', 'Total Defects', 'RV Mismatch', 'Critical', 'High', 'Medium', 'Low', 'Health Score'];
 
 function sortRows(rows, key, dir) {
   return [...rows].sort((a, b) => {
@@ -136,6 +138,7 @@ export default function DailyMetricsTable({ rows, totals, year, month }) {
                   </td>
                   <td className="data-table__td data-table__td--num">{r.t || '—'}</td>
                   <td className="data-table__td data-table__td--num">{r.d || '—'}</td>
+                  <td className="data-table__td data-table__td--num">{r.rvMismatch || '—'}</td>
                   {PRIORITY_DEFS.map(p => (
                     <td key={p.key} className="data-table__td data-table__td--center">
                       <Chip value={r[p.key] || null} color={p.color} />
@@ -175,6 +178,11 @@ export default function DailyMetricsTable({ rows, totals, year, month }) {
                     {r.d}
                   </JiraLink>
                 </td>
+                <td className="data-table__td data-table__td--num">
+                  <JiraLink href={r.rvMismatch > 0 ? rmDailyRvMismatchLink(r.date, year) : null} plain>
+                    {r.rvMismatch || '—'}
+                  </JiraLink>
+                </td>
                 {PRIORITY_DEFS.map(p => (
                   <td key={p.key} className="data-table__td data-table__td--center">
                     <JiraLink href={r[p.key] > 0 ? rmDailyPriorityLink(r.date, year, p.jira) : null}>
@@ -210,6 +218,9 @@ export default function DailyMetricsTable({ rows, totals, year, month }) {
                 <JiraLink href={totals.d > 0 ? rmMonthlyDefectsLink(year, month) : null} plain>
                   {totals.d}
                 </JiraLink>
+              </td>
+              <td className="data-table__tfoot-cell data-table__tfoot-cell--val">
+                {totals.rvMismatch || '—'}
               </td>
               {PRIORITY_DEFS.map(p => (
                 <td key={p.key} className="data-table__tfoot-cell data-table__tfoot-cell--center">
@@ -273,6 +284,12 @@ export default function DailyMetricsTable({ rows, totals, year, month }) {
               <div className="card-list__row">
                 <span className="card-list__key">Total Defects</span>
                 <JiraLink href={r.d > 0 ? rmDailyDefectsLink(r.date, year) : null} plain>{r.d}</JiraLink>
+              </div>
+              <div className="card-list__row">
+                <span className="card-list__key">RV Mismatch</span>
+                <JiraLink href={r.rvMismatch > 0 ? rmDailyRvMismatchLink(r.date, year) : null} plain>
+                  {r.rvMismatch || '—'}
+                </JiraLink>
               </div>
               {PRIORITY_DEFS.map(p => (
                 <div key={p.key} className="card-list__row">

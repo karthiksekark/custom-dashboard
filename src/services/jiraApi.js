@@ -252,7 +252,7 @@ export async function fetchDailyMetrics(year, month, components, { signal } = {}
       const [dm, dd] = dateKey.split('/').map(Number);
       byDate[dateKey] = {
         date: dateKey, t: 0, d: 0, c: 0, h: 0, m: 0, l: 0, closedT: 0,
-        cLate: 0, hLate: 0,
+        cLate: 0, hLate: 0, rvMismatch: 0,
         // precompute 8AM EST cutoff for this date once, reused for every C/H defect
         _cutoff: moment.tz({ year: Number(year), month: dm - 1, date: dd, hour: 8, minute: 0 }, EST),
       };
@@ -282,6 +282,27 @@ export async function fetchDailyMetrics(year, month, components, { signal } = {}
       }
     }
     if (['Done', 'Closed', 'Resolved'].includes(issue.fields.status?.name)) row.closedT += 1;
+  });
+
+  // Second pass: count PRODDEF tickets where RV date token doesn't startWith created M/D/
+  // Anchored to created date so mismatches always appear on the row for when they were filed
+  data.issues.forEach(issue => {
+    if (!issue.key.startsWith('PRODDEF-')) return;
+    const cfRaw = issue.fields?.customfield_41817?.value;
+    if (!cfRaw) return;
+    const createdDate = moment(issue.fields?.created).tz(EST).format('M/D');
+    if (!createdDate.startsWith(monthPrefix)) return;
+    const dateToken = cfRaw.split(' ').find(t => t.includes('/'));
+    if (dateToken?.startsWith(createdDate + '/')) return;
+    if (!byDate[createdDate]) {
+      const [dm, dd] = createdDate.split('/').map(Number);
+      byDate[createdDate] = {
+        date: createdDate, t: 0, d: 0, c: 0, h: 0, m: 0, l: 0, closedT: 0,
+        cLate: 0, hLate: 0, rvMismatch: 0,
+        _cutoff: moment.tz({ year: Number(year), month: dm - 1, date: dd, hour: 8, minute: 0 }, EST),
+      };
+    }
+    byDate[createdDate].rvMismatch += 1;
   });
 
   return Object.values(byDate)
