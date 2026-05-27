@@ -184,7 +184,7 @@ export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, 
       </Card>
 
       {/* ── Row 5: Quarterly overview ── */}
-      <Card collapsible>
+      <Card>
         <CardHeader eyebrow="Quarterly Overview" title={`Quarterly Release Metrics — ${year}`} onRefresh={refresh} isRefreshing={loading} lastFetchedAt={lastFetchedAt} />
         <div className="release-mgmt__quarters">
           {enrichedQuarters.map((q, i) => (
