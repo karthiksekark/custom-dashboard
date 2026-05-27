@@ -159,12 +159,14 @@ export function rmMonthlyTicketsLink(year, month) {
 
 export function rmMonthlyDefectsLink(year, month) {
   const { start, end } = rangeJql(year, month);
-  return buildUrl(`${RM_PRODDEF_BASE} AND created >= "${start}" AND created <= "${end}"`);
+  const endNext = moment(end).add(1, 'day').format('YYYY-MM-DD');
+  return buildUrl(`${RM_PRODDEF_BASE} AND created >= "${start}" AND created < "${endNext}"`);
 }
 
 export function rmMonthlyPriorityLink(year, month, priority) {
   const { start, end } = rangeJql(year, month);
-  return buildUrl(`${RM_PRODDEF_BASE} AND created >= "${start}" AND created <= "${end}" AND priority = "${priority}"`);
+  const endNext = moment(end).add(1, 'day').format('YYYY-MM-DD');
+  return buildUrl(`${RM_PRODDEF_BASE} AND created >= "${start}" AND created < "${endNext}" AND priority = "${priority}"`);
 }
 
 // ── Quarterly cards ───────────────────────────────────────────────────────────
@@ -192,7 +194,8 @@ export function rmDailyHealthScoreLink(dateStr, year) {
 
 export function rmMonthlyHealthScoreLink(year, month) {
   const { start, end } = rangeJql(year, month);
-  return buildUrl(`${RM_HS_BASE} AND "Date Resolved" is EMPTY AND created >= "${start}" AND created <= "${end}"`);
+  const endNext = moment(end).add(1, 'day').format('YYYY-MM-DD');
+  return buildUrl(`${RM_HS_BASE} AND "Date Resolved" is EMPTY AND created >= "${start}" AND created < "${endNext}"`);
 }
 
 export function rmQuarterHealthScoreLink(startDate, endDate) {
