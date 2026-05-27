@@ -301,6 +301,100 @@ export async function fetchDailyMetrics(year, month, components, { signal } = {}
     });
 }
 
+const RM_HS_FIELDS = ['priority', 'status', 'created', 'duedate', 'resolutiondate', 'customfield_41817', 'customfield_44301'];
+const RM_HS_DOPMO_BASE = [
+  '((project = DOPMO',
+  'AND (component in ("DIGOPS/UAT","DIGOPS/OPUAT","DIGOPS/CR_UAT") OR summary ~ "BZ VAL" OR summary ~ "BIZ VAL" OR summary ~ "BUSVAL" OR labels in ("bizval"))',
+  'AND (labels not in ("Lower-Env", Lower_Env) AND labels is not EMPTY)',
+  'AND status not in (Cancelled, "On Hold", Open)',
+].join(' ');
+const RM_HS_PRODDEF_BASE = [
+  'OR (project = PRODDEF',
+  'AND status not in (Cancelled, "On Hold")',
+  'AND "Release Version" is not EMPTY',
+].join(' ');
+
+function rmHsFromIssues(issues, { year, monthPrefix }) {
+  let t = 0, cLate = 0, hLate = 0;
+  issues.forEach(issue => {
+    if (issue.key.startsWith('DOPMO-')) {
+      const dateKey = moment(issue.fields?.duedate).tz(EST).format('M/D');
+      if (monthPrefix && !dateKey.startsWith(monthPrefix)) return;
+      t += 1;
+    } else {
+      const cfRaw       = issue.fields?.customfield_41817?.value;
+      const cfDate      = cfRaw?.split(' ')[1]?.split('/').slice(0, -1).join('/');
+      const createdDate = moment(issue.fields?.created).tz(EST).format('M/D');
+      const dateKey     = cfDate === createdDate ? createdDate : (cfDate ?? createdDate);
+      if (!dateKey) return;
+      if (monthPrefix && !dateKey.startsWith(monthPrefix)) return;
+      if (!cfRaw?.includes('Content ' + dateKey)) return;
+      const p = issue.fields.priority?.name;
+      if (p !== 'Critical' && p !== 'High') return;
+      const rc = issue.fields?.customfield_44301?.value;
+      if (rc && RC_EXCLUDE_SET.has(rc)) return;
+      const [dm, dd] = dateKey.split('/').map(Number);
+      const cutoff   = moment.tz({ year: Number(year), month: dm - 1, date: dd, hour: 8, minute: 0 }, EST);
+      const resolved = issue.fields.resolutiondate;
+      if (!(!resolved || moment(resolved).tz(EST).isAfter(cutoff))) return;
+      if (p === 'Critical') cLate += 1; else hLate += 1;
+    }
+  });
+  return t > 0 ? parseFloat((100 - (cLate * 35 + hLate * 15) / (t * 10)).toFixed(2)) : null;
+}
+
+export async function fetchRMHealthScore(components, { signal } = {}) {
+  const today      = moment().tz(EST).format('YYYY-MM-DD');
+  const tomorrow   = moment(today).add(1, 'day').format('YYYY-MM-DD');
+  const todayLabel = moment().tz(EST).format('M/D');
+  const year       = String(moment().tz(EST).year());
+
+  const jql = [
+    RM_HS_DOPMO_BASE,
+    `AND due = "${today}"`,
+    'AND issuetype not in (Task))',
+    RM_HS_PRODDEF_BASE,
+    `AND created >= "${today}"`,
+    `AND created < "${tomorrow}"`,
+    'AND priority in ("Critical", "High", "Medium", "Low")))',
+  ].join(' ');
+
+  const data = await jqlSearch(jql, { signal, fields: RM_HS_FIELDS });
+  return rmHsFromIssues(data.issues, { year, monthPrefix: todayLabel.split('/')[0] + '/' });
+}
+
+export async function fetchRMMonthlyHealthScore(year, month, components, { signal } = {}) {
+  const { start, end } = rangeJql(year, month);
+  const isCurrentMonth      = moment().tz(EST).format('MM');
+  const today               = moment().tz(EST).format('YYYY-MM-DD');
+  const modifiedEndDate     = moment(isCurrentMonth === month ? today : end)
+    .tz(EST).add(isCurrentMonth === month ? 0 : 1, 'days').format('YYYY-MM-DD');
+  const modifiedEndDateNext = moment(modifiedEndDate).add(1, 'day').format('YYYY-MM-DD');
+  const monthPrefix         = moment(month, 'MM').tz(EST).format('M/');
+  const proddefStart        = moment(start).tz(EST).subtract(1, 'days').format('YYYY-MM-DD');
+
+  const jql = [
+    RM_HS_DOPMO_BASE,
+    `AND due >= "${start}"`,
+    `AND due <= "${modifiedEndDate}"`,
+    'AND issuetype not in (Task))',
+    RM_HS_PRODDEF_BASE,
+    `AND created >= "${proddefStart}"`,
+    `AND created < "${modifiedEndDateNext}"`,
+    'AND priority in ("Critical", "High", "Medium", "Low")))',
+  ].join(' ');
+
+  const data = await jqlSearch(jql, { signal, fields: RM_HS_FIELDS });
+  return rmHsFromIssues(data.issues, { year, monthPrefix });
+}
+
+export async function fetchPrevMonthRMHealthScore(year, month, components, ctx) {
+  let prevMonth = Number(month) - 1;
+  let prevYear  = year;
+  if (prevMonth < 1) { prevMonth = 12; prevYear = String(Number(year) - 1); }
+  return fetchRMMonthlyHealthScore(prevYear, String(prevMonth).padStart(2, '0'), components, ctx);
+}
+
 export async function fetchHealthScore(year, month, components, { signal } = {}) {
   const { start, end } = rangeJql(year, month);
   const jql  = `project is not EMPTY${compClause(components)} AND created >= "${start}" AND created <= "${end}"`;
