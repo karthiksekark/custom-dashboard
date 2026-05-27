@@ -200,6 +200,30 @@ export function rmDailyHealthScoreLink(dateStr, year) {
   return buildUrl(`${RM_HS_BASE} AND ("Date Resolved" >= "${iso} 08:00" OR "Date Resolved" is EMPTY) AND created >= "${iso}" AND created < "${nextDay}"`);
 }
 
+export function rmDailyCLateLink(dateStr, year) {
+  const iso     = rowDateToIso(dateStr, year);
+  const nextDay = moment(iso).add(1, 'day').format('YYYY-MM-DD');
+  return buildUrl(`${RM_HS_BASE} AND priority = "Critical" AND ("Date Resolved" >= "${iso} 08:00" OR "Date Resolved" is EMPTY) AND created >= "${iso}" AND created < "${nextDay}"`);
+}
+
+export function rmDailyHLateLink(dateStr, year) {
+  const iso     = rowDateToIso(dateStr, year);
+  const nextDay = moment(iso).add(1, 'day').format('YYYY-MM-DD');
+  return buildUrl(`${RM_HS_BASE} AND priority = "High" AND ("Date Resolved" >= "${iso} 08:00" OR "Date Resolved" is EMPTY) AND created >= "${iso}" AND created < "${nextDay}"`);
+}
+
+export function rmMonthlyCLateLink(year, month) {
+  const { start, end } = rangeJql(year, month);
+  const endNext = moment(end).add(1, 'day').format('YYYY-MM-DD');
+  return buildUrl(`${RM_HS_BASE} AND priority = "Critical" AND "Date Resolved" is EMPTY AND created >= "${start}" AND created < "${endNext}"`);
+}
+
+export function rmMonthlyHLateLink(year, month) {
+  const { start, end } = rangeJql(year, month);
+  const endNext = moment(end).add(1, 'day').format('YYYY-MM-DD');
+  return buildUrl(`${RM_HS_BASE} AND priority = "High" AND "Date Resolved" is EMPTY AND created >= "${start}" AND created < "${endNext}"`);
+}
+
 export function rmMonthlyHealthScoreLink(year, month) {
   const { start, end } = rangeJql(year, month);
   const endNext = moment(end).add(1, 'day').format('YYYY-MM-DD');

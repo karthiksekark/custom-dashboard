@@ -307,11 +307,14 @@ export async function fetchDailyMetrics(year, month, components, { signal } = {}
 
   return Object.values(byDate)
     // eslint-disable-next-line no-unused-vars
-    .map(({ _cutoff, cLate, hLate, closedT, ...row }) => {
+    .map(({ _cutoff, closedT, ...row }) => {
+      const { cLate, hLate } = row;
       return {
         ...row,
         c:  row.c || null,
         l:  row.l || null,
+        cLate: cLate || null,
+        hLate: hLate || null,
         hs: row.t > 0 ? parseFloat((100 - (cLate * 35 + hLate * 15) / (row.t * 10)).toFixed(2)) : null,
       };
     })
