@@ -19,20 +19,27 @@ function rowDateToIso(dateStr, year) {
 }
 
 // ── Implementation table ──────────────────────────────────────────────────────
-export function implTeamFieldLink(team, field, todayIso, components) {
-  const comp = compClause(components);
-  const jql  = field === 'Total'
-    ? `${projectClause()}${comp} AND assignee = "${team}" AND created = "${todayIso}"`
-    : `${projectClause()}${comp} AND labels = "${field}" AND assignee = "${team}" AND created = "${todayIso}"`;
-  return buildUrl(jql);
+const IMPL_TYPE_CLAUSE = {
+  UAT:    'component in ("DIGOPS/UAT")',
+  OPUAT:  'component in ("DIGOPS/OPUAT")',
+  CR_UAT: 'component in ("DIGOPS/CR_UAT")',
+  BIZ_VAL: '(summary ~ "BZ VAL" OR summary ~ "BIZ VAL" OR summary ~ "BUSVAL" OR labels in ("BIZ_VAL", "bizval"))',
+  Total:  '(component in ("DIGOPS/UAT","DIGOPS/OPUAT","DIGOPS/CR_UAT") OR summary ~ "BZ VAL" OR summary ~ "BIZ VAL" OR summary ~ "BUSVAL" OR labels in ("BIZ_VAL", "bizval"))',
+};
+
+const IMPL_BASE_JQL = 'project = DOPMO AND status not in (Cancelled, "On Hold", Open) AND (labels not in ("Lower-Env", Lower_Env) AND labels is not EMPTY) AND issuetype not in (Task)';
+
+export function implTeamFieldLink(teamComps, field, todayIso) {
+  const typeClause = IMPL_TYPE_CLAUSE[field];
+  if (!typeClause) return null;
+  const comp = compClause(teamComps);
+  return buildUrl(`${IMPL_BASE_JQL}${comp} AND due = "${todayIso}" AND ${typeClause}`);
 }
 
-export function implConsolidatedFieldLink(field, todayIso, components) {
-  const comp = compClause(components);
-  const jql  = field === 'Total'
-    ? `${projectClause()}${comp} AND created = "${todayIso}"`
-    : `${projectClause()}${comp} AND labels = "${field}" AND created = "${todayIso}"`;
-  return buildUrl(jql);
+export function implConsolidatedFieldLink(field, todayIso) {
+  const typeClause = IMPL_TYPE_CLAUSE[field];
+  if (!typeClause) return null;
+  return buildUrl(`${IMPL_BASE_JQL} AND due = "${todayIso}" AND ${typeClause}`);
 }
 
 // ── Defects-alert table ───────────────────────────────────────────────────────
