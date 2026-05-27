@@ -10,10 +10,14 @@ import {
   rmDailyPriorityLink,
   rmDailyHealthScoreLink,
   rmDailyRvMismatchLink,
+  rmDailyCLateLink,
+  rmDailyHLateLink,
   rmMonthlyTicketsLink,
   rmMonthlyDefectsLink,
   rmMonthlyPriorityLink,
   rmMonthlyHealthScoreLink,
+  rmMonthlyCLateLink,
+  rmMonthlyHLateLink,
 } from '../../services/jiraLinks';
 import { groupByWeek } from '../../utils/weeklyRollup';
 import './Tables.scss';
@@ -56,10 +60,12 @@ const PRIORITY_DEFS = [
 const COL_SORT = {
   'Release Date': 'date', 'Total Tickets': 't', 'Total Defects': 'd',
   'RV Mismatch': 'rvMismatch',
-  'Critical': 'c', 'High': 'h', 'Medium': 'm', 'Low': 'l', 'Health Score': 'hs',
+  'Critical': 'c', 'High': 'h', 'Medium': 'm', 'Low': 'l',
+  'C Late': 'cLate', 'H Late': 'hLate',
+  'Health Score': 'hs',
 };
 
-const COLS = ['Release Date', 'Total Tickets', 'Total Defects', 'RV Mismatch', 'Critical', 'High', 'Medium', 'Low', 'Health Score'];
+const COLS = ['Release Date', 'Total Tickets', 'Total Defects', 'RV Mismatch', 'Critical', 'High', 'Medium', 'Low', 'C Late', 'H Late', 'Health Score'];
 
 function sortRows(rows, key, dir) {
   return [...rows].sort((a, b) => {
@@ -144,6 +150,8 @@ export default function DailyMetricsTable({ rows, totals, year, month }) {
                       <Chip value={r[p.key] || null} color={p.color} />
                     </td>
                   ))}
+                  <td className="data-table__td data-table__td--num">{r.cLate || '—'}</td>
+                  <td className="data-table__td data-table__td--num">{r.hLate || '—'}</td>
                   <td className="data-table__td data-table__td--health">
                     {r.hs != null ? (
                       <span style={{ fontWeight: 600, color: healthColor(r.hs) }}>{r.hs}</span>
@@ -190,6 +198,16 @@ export default function DailyMetricsTable({ rows, totals, year, month }) {
                     </JiraLink>
                   </td>
                 ))}
+                <td className="data-table__td data-table__td--num">
+                  <JiraLink href={r.cLate > 0 ? rmDailyCLateLink(r.date, year) : null} plain>
+                    {r.cLate || '—'}
+                  </JiraLink>
+                </td>
+                <td className="data-table__td data-table__td--num">
+                  <JiraLink href={r.hLate > 0 ? rmDailyHLateLink(r.date, year) : null} plain>
+                    {r.hLate || '—'}
+                  </JiraLink>
+                </td>
                 <td className="data-table__td data-table__td--health">
                   <JiraLink href={r.hs !== null && r.hs < 100 ? rmDailyHealthScoreLink(r.date, year) : null}>
                     <div className="health-bar" style={{ '--hc': hc }}>
@@ -229,6 +247,16 @@ export default function DailyMetricsTable({ rows, totals, year, month }) {
                   </JiraLink>
                 </td>
               ))}
+              <td className="data-table__tfoot-cell data-table__tfoot-cell--val">
+                <JiraLink href={totals.cLate > 0 ? rmMonthlyCLateLink(year, month) : null} plain>
+                  {totals.cLate || '—'}
+                </JiraLink>
+              </td>
+              <td className="data-table__tfoot-cell data-table__tfoot-cell--val">
+                <JiraLink href={totals.hLate > 0 ? rmMonthlyHLateLink(year, month) : null} plain>
+                  {totals.hLate || '—'}
+                </JiraLink>
+              </td>
               <td className="data-table__tfoot-cell data-table__tfoot-cell--hs">
                 <JiraLink href={totals.hs !== null && totals.hs < 100 ? rmMonthlyHealthScoreLink(year, month) : null} plain>
                   {totals.hs}
@@ -299,6 +327,18 @@ export default function DailyMetricsTable({ rows, totals, year, month }) {
                   </JiraLink>
                 </div>
               ))}
+              <div className="card-list__row">
+                <span className="card-list__key">C Late</span>
+                <JiraLink href={r.cLate > 0 ? rmDailyCLateLink(r.date, year) : null} plain>
+                  {r.cLate || '—'}
+                </JiraLink>
+              </div>
+              <div className="card-list__row">
+                <span className="card-list__key">H Late</span>
+                <JiraLink href={r.hLate > 0 ? rmDailyHLateLink(r.date, year) : null} plain>
+                  {r.hLate || '—'}
+                </JiraLink>
+              </div>
               <div className="card-list__row">
                 <span className="card-list__key">Health Score</span>
                 <JiraLink href={r.hs !== null && r.hs < 100 ? rmDailyHealthScoreLink(r.date, year) : null}>

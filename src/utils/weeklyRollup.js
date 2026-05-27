@@ -23,6 +23,8 @@ function buildRollup(rows) {
     c: sum('c'), h: sum('h'), m: sum('m'), l: sum('l'),
     rg: sum('rg'), fp: sum('fp'), dp: sum('dp'),
     rvMismatch: sum('rvMismatch'),
+    cLate: sum('cLate'),
+    hLate: sum('hLate'),
     hs,
   };
 }
