@@ -159,6 +159,19 @@ export function quarterPriorityLink(qStart, qEnd, priority, components) {
   return buildUrl(`issuetype = Bug${comp} AND priority = "${priority}" AND created >= "${qStart}" AND created <= "${qEnd}"`);
 }
 
+// ── Release Mgmt quarterly cards ─────────────────────────────────────────────
+export function rmQuarterTicketsLink(startDate, endDate) {
+  return buildUrl(`${RM_DOPMO_BASE} AND due >= "${startDate}" AND due <= "${endDate}"`);
+}
+
+export function rmQuarterDefectsLink(startDate, endDate) {
+  return buildUrl(`${RM_PRODDEF_BASE} AND created >= "${startDate}" AND created <= "${endDate}"`);
+}
+
+export function rmQuarterPriorityLink(startDate, endDate, priority) {
+  return buildUrl(`${RM_PRODDEF_BASE} AND created >= "${startDate}" AND created <= "${endDate}" AND priority = "${priority}"`);
+}
+
 // ── Tab-specific daily links (regression, fast-path, direct-publishing) ───────
 export function tabDailyRegressionLink(dateStr, year, components) {
   const iso  = rowDateToIso(dateStr, year);

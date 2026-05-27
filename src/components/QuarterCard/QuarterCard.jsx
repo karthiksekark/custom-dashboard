@@ -5,13 +5,13 @@ import { healthColor } from '../../services/healthUtils';
 const EST = 'America/New_York';
 import JiraLink from '../JiraLink/JiraLink';
 import {
-  quarterTotalTicketsLink,
-  quarterTotalDefectsLink,
-  quarterPriorityLink,
+  rmQuarterTicketsLink,
+  rmQuarterDefectsLink,
+  rmQuarterPriorityLink,
 } from '../../services/jiraLinks';
 import './QuarterCard.scss';
 
-export default function QuarterCard({ quarter, isActive, components }) {
+export default function QuarterCard({ quarter, isActive }) {
   const { q, period, days, tickets, defects, c, h, m, l, hs, acc, startDate, endDate } = quarter;
   const empty = days === 0;
   const hc    = healthColor(hs);
@@ -27,14 +27,14 @@ export default function QuarterCard({ quarter, isActive, components }) {
   }
 
   const rows = [
-    { label: 'Release Days',  val: empty ? '—' : days,    link: null,                                               color: null       },
-    { label: 'Total Tickets', val: empty ? '—' : tickets, link: quarterTotalTicketsLink(startDate, endDate, components),        color: '#334155'  },
-    { label: 'Total Defects', val: empty ? '—' : defects, link: quarterTotalDefectsLink(startDate, endDate, components),        color: '#334155'  },
-    { label: 'Critical',      val: empty ? '—' : c,       link: quarterPriorityLink(startDate, endDate, 'Critical', components),color: '#dc2626'  },
-    { label: 'High',          val: empty ? '—' : h,       link: quarterPriorityLink(startDate, endDate, 'High', components),    color: '#ea580c'  },
-    { label: 'Medium',        val: empty ? '—' : m,       link: quarterPriorityLink(startDate, endDate, 'Medium', components),  color: '#ca8a04'  },
-    { label: 'Low',           val: empty ? '—' : l,       link: quarterPriorityLink(startDate, endDate, 'Low', components),     color: '#0284c7'  },
-    { label: 'Avg. Health',   val: empty ? '—' : hs,      link: null,                                               color: hc         },
+    { label: 'Release Days',  val: empty ? '—' : days,    link: null,                                                                           color: null       },
+    { label: 'Total Tickets', val: empty ? '—' : tickets, link: tickets > 0 ? rmQuarterTicketsLink(startDate, endDate) : null,                  color: '#334155'  },
+    { label: 'Total Defects', val: empty ? '—' : defects, link: defects > 0 ? rmQuarterDefectsLink(startDate, endDate) : null,                  color: '#334155'  },
+    { label: 'Critical',      val: empty ? '—' : c,       link: c > 0       ? rmQuarterPriorityLink(startDate, endDate, 'Critical') : null,     color: '#dc2626'  },
+    { label: 'High',          val: empty ? '—' : h,       link: h > 0       ? rmQuarterPriorityLink(startDate, endDate, 'High') : null,         color: '#ea580c'  },
+    { label: 'Medium',        val: empty ? '—' : m,       link: m > 0       ? rmQuarterPriorityLink(startDate, endDate, 'Medium') : null,       color: '#ca8a04'  },
+    { label: 'Low',           val: empty ? '—' : l,       link: l > 0       ? rmQuarterPriorityLink(startDate, endDate, 'Low') : null,          color: '#0284c7'  },
+    { label: 'Avg. Health',   val: empty ? '—' : hs,      link: null,                                                                           color: hc         },
   ];
 
   const modifiers = [
@@ -107,6 +107,5 @@ QuarterCard.propTypes = {
     startDate: PropTypes.string,
     endDate:   PropTypes.string,
   }).isRequired,
-  isActive:   PropTypes.bool,
-  components: PropTypes.string,
+  isActive: PropTypes.bool,
 };
