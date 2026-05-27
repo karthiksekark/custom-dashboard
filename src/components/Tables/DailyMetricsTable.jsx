@@ -5,12 +5,12 @@ import Chip from '../Chip/Chip';
 import JiraLink from '../JiraLink/JiraLink';
 import { healthColor } from '../../services/healthUtils';
 import {
-  dailyTotalTicketsLink,
-  dailyTotalDefectsLink,
-  dailyPriorityLink,
-  monthlyTotalTicketsLink,
-  monthlyTotalDefectsLink,
-  monthlyPriorityLink,
+  rmDailyTicketsLink,
+  rmDailyDefectsLink,
+  rmDailyPriorityLink,
+  rmMonthlyTicketsLink,
+  rmMonthlyDefectsLink,
+  rmMonthlyPriorityLink,
 } from '../../services/jiraLinks';
 import { groupByWeek } from '../../utils/weeklyRollup';
 import './Tables.scss';
@@ -73,7 +73,7 @@ function sortRows(rows, key, dir) {
   });
 }
 
-export default function DailyMetricsTable({ rows, totals, year, month, components }) {
+export default function DailyMetricsTable({ rows, totals, year, month }) {
   const todayStr = moment().tz(EST).format('M/D');
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState(null);
@@ -164,18 +164,18 @@ export default function DailyMetricsTable({ rows, totals, year, month, component
                   {r.date}
                 </td>
                 <td className="data-table__td data-table__td--num">
-                  <JiraLink href={dailyTotalTicketsLink(r.date, year, components)} plain>
+                  <JiraLink href={r.t > 0 ? rmDailyTicketsLink(r.date, year) : null} plain>
                     {r.t}
                   </JiraLink>
                 </td>
                 <td className="data-table__td data-table__td--num">
-                  <JiraLink href={dailyTotalDefectsLink(r.date, year, components)} plain>
+                  <JiraLink href={r.d > 0 ? rmDailyDefectsLink(r.date, year) : null} plain>
                     {r.d}
                   </JiraLink>
                 </td>
                 {PRIORITY_DEFS.map(p => (
                   <td key={p.key} className="data-table__td data-table__td--center">
-                    <JiraLink href={dailyPriorityLink(r.date, year, p.jira, components)}>
+                    <JiraLink href={r[p.key] > 0 ? rmDailyPriorityLink(r.date, year, p.jira) : null}>
                       <Chip value={r[p.key]} color={p.color} />
                     </JiraLink>
                   </td>
@@ -198,18 +198,18 @@ export default function DailyMetricsTable({ rows, totals, year, month, component
             <tr className="data-table__foot-row">
               <td className="data-table__tfoot-cell data-table__tfoot-cell--label">Total</td>
               <td className="data-table__tfoot-cell data-table__tfoot-cell--val">
-                <JiraLink href={monthlyTotalTicketsLink(year, month, components)} plain>
+                <JiraLink href={totals.t > 0 ? rmMonthlyTicketsLink(year, month) : null} plain>
                   {totals.t}
                 </JiraLink>
               </td>
               <td className="data-table__tfoot-cell data-table__tfoot-cell--val">
-                <JiraLink href={monthlyTotalDefectsLink(year, month, components)} plain>
+                <JiraLink href={totals.d > 0 ? rmMonthlyDefectsLink(year, month) : null} plain>
                   {totals.d}
                 </JiraLink>
               </td>
               {PRIORITY_DEFS.map(p => (
                 <td key={p.key} className="data-table__tfoot-cell data-table__tfoot-cell--center">
-                  <JiraLink href={monthlyPriorityLink(year, month, p.jira, components)}>
+                  <JiraLink href={totals[p.key] > 0 ? rmMonthlyPriorityLink(year, month, p.jira) : null}>
                     <Chip value={totals[p.key]} color={p.color} />
                   </JiraLink>
                 </td>
@@ -260,16 +260,16 @@ export default function DailyMetricsTable({ rows, totals, year, month, component
               </div>
               <div className="card-list__row">
                 <span className="card-list__key">Total Tickets</span>
-                <JiraLink href={dailyTotalTicketsLink(r.date, year, components)} plain>{r.t}</JiraLink>
+                <JiraLink href={r.t > 0 ? rmDailyTicketsLink(r.date, year) : null} plain>{r.t}</JiraLink>
               </div>
               <div className="card-list__row">
                 <span className="card-list__key">Total Defects</span>
-                <JiraLink href={dailyTotalDefectsLink(r.date, year, components)} plain>{r.d}</JiraLink>
+                <JiraLink href={r.d > 0 ? rmDailyDefectsLink(r.date, year) : null} plain>{r.d}</JiraLink>
               </div>
               {PRIORITY_DEFS.map(p => (
                 <div key={p.key} className="card-list__row">
                   <span className="card-list__key">{p.jira}</span>
-                  <JiraLink href={dailyPriorityLink(r.date, year, p.jira, components)}>
+                  <JiraLink href={r[p.key] > 0 ? rmDailyPriorityLink(r.date, year, p.jira) : null}>
                     <Chip value={r[p.key]} color={p.color} />
                   </JiraLink>
                 </div>
@@ -287,9 +287,8 @@ export default function DailyMetricsTable({ rows, totals, year, month, component
 }
 
 DailyMetricsTable.propTypes = {
-  rows:       PropTypes.arrayOf(PropTypes.object).isRequired,
-  totals:     PropTypes.object,
-  year:       PropTypes.string.isRequired,
-  month:      PropTypes.string.isRequired,
-  components: PropTypes.string,
+  rows:   PropTypes.arrayOf(PropTypes.object).isRequired,
+  totals: PropTypes.object,
+  year:   PropTypes.string.isRequired,
+  month:  PropTypes.string.isRequired,
 };

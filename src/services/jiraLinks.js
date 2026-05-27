@@ -105,6 +105,44 @@ export function monthlyPriorityLink(year, month, priority, components) {
   return buildUrl(`issuetype = Bug${comp} AND priority = "${priority}" AND created >= "${start}" AND created <= "${end}"`);
 }
 
+// ── Release Mgmt daily metrics table ─────────────────────────────────────────
+// DOPMO base: component/label/status/issuetype conditions matching fetchDailyMetrics
+const RM_DOPMO_BASE = 'project = DOPMO AND (component in ("DIGOPS/UAT","DIGOPS/OPUAT","DIGOPS/CR_UAT") OR summary ~ "BZ VAL" OR summary ~ "BIZ VAL" OR summary ~ "BUSVAL" OR labels in ("bizval")) AND (labels not in ("Lower-Env", Lower_Env) AND labels is not EMPTY) AND status not in (Cancelled, "On Hold", Open) AND issuetype not in (Task)';
+// PRODDEF base: status/Release Version conditions matching fetchDailyMetrics
+const RM_PRODDEF_BASE = 'project = PRODDEF AND status not in (Cancelled, "On Hold") AND "Release Version" is not EMPTY AND priority in ("Critical", "High", "Medium", "Low")';
+
+// Convert M/D dateStr + 4-digit year → "Content M/D/YY" (Release Version field value)
+function toReleaseVersion(dateStr, year) {
+  return `Content ${dateStr}/${year.slice(-2)}`;
+}
+
+export function rmDailyTicketsLink(dateStr, year) {
+  return buildUrl(`${RM_DOPMO_BASE} AND due = "${rowDateToIso(dateStr, year)}"`);
+}
+
+export function rmDailyDefectsLink(dateStr, year) {
+  return buildUrl(`${RM_PRODDEF_BASE} AND "Release Version" = "${toReleaseVersion(dateStr, year)}"`);
+}
+
+export function rmDailyPriorityLink(dateStr, year, priority) {
+  return buildUrl(`${RM_PRODDEF_BASE} AND "Release Version" = "${toReleaseVersion(dateStr, year)}" AND priority = "${priority}"`);
+}
+
+export function rmMonthlyTicketsLink(year, month) {
+  const { start, end } = rangeJql(year, month);
+  return buildUrl(`${RM_DOPMO_BASE} AND due >= "${start}" AND due <= "${end}"`);
+}
+
+export function rmMonthlyDefectsLink(year, month) {
+  const { start, end } = rangeJql(year, month);
+  return buildUrl(`${RM_PRODDEF_BASE} AND created >= "${start}" AND created <= "${end}"`);
+}
+
+export function rmMonthlyPriorityLink(year, month, priority) {
+  const { start, end } = rangeJql(year, month);
+  return buildUrl(`${RM_PRODDEF_BASE} AND created >= "${start}" AND created <= "${end}" AND priority = "${priority}"`);
+}
+
 // ── Quarterly cards ───────────────────────────────────────────────────────────
 export function quarterTotalTicketsLink(qStart, qEnd, components) {
   const comp = compClause(components);
