@@ -22,7 +22,7 @@ function createEmptyData(rcLabels) {
   };
 }
 
-export function useTabData({ year, month, components, rcLabels, mockData, dashboardView, activeTab, isFiltered }) {
+export function useTabData({ year, month, day, components, rcLabels, mockData, dashboardView, activeTab, isFiltered }) {
   const [data,       setData]       = useState(() => createEmptyData(rcLabels));
   const [loading,    setLoading]    = useState(true);
   const [usingMock,  setUsingMock]  = useState(false);
@@ -33,7 +33,7 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
   const markFetchedRef      = useRef(null);
   const refreshIntervalMsRef = useRef(null);
 
-  const cacheKey = cache.makeKey(year, month, components);
+  const cacheKey = cache.makeKey(year, month, day, components);
 
   const load = useCallback(async (signal, { silent = false } = {}) => {
     if (!silent) {
@@ -106,10 +106,10 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
       }
 
       const settled = await Promise.allSettled([
-        api.fetchMonthlyDefects(year, month, components, rcLabels, ctx),
-        api.fetchRegressionByRootCause(year, month, components, rcLabels, ctx),
-        api.fetchHealthScore(year, month, components, ctx),
-        api.fetchTabDailyMetrics(year, month, components, ctx),
+        api.fetchMonthlyDefects(year, month, day, components, rcLabels, ctx),
+        api.fetchRegressionByRootCause(year, month, day, components, rcLabels, ctx),
+        api.fetchHealthScore(year, month, day, components, ctx),
+        api.fetchTabDailyMetrics(year, month, day, components, ctx),
         api.fetchTabQuarters(year, components, ctx),
         api.fetchPrevMonthHealthScore(year, month, components, ctx),
         api.fetchPrevMonthDefectsTotal(year, month, components, ctx),
@@ -168,12 +168,12 @@ export function useTabData({ year, month, components, rcLabels, mockData, dashbo
     } finally {
       setLoading(false);
     }
-  }, [year, month, components, rcLabels, mockData, dashboardView, activeTab, isFiltered, cacheKey]);
+  }, [year, month, day, components, rcLabels, mockData, dashboardView, activeTab, isFiltered, cacheKey]);
 
   const { lastFetchedAt, markFetched, refresh, refreshIntervalMs } = useBaseData({
     load,
     cacheKey,
-    deps: [year, month, components],
+    deps: [year, month, day, components],
   });
 
   // Keep refs in sync so load can use these without extra deps

@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import './ControlBar.scss';
 
-export default function ControlBar({ year, month, years, months, onYearChange, onMonthChange }) {
+export default function ControlBar({ year, month, day, years, months, days, onYearChange, onMonthChange, onDayChange, onToday }) {
   const monthsForYear = months.filter(m => m.year === year);
 
   return (
@@ -11,11 +11,11 @@ export default function ControlBar({ year, month, years, months, onYearChange, o
         <div className="control-bar__selects">
           <select
             className="control-bar__select"
-            value={year}
-            onChange={e => onYearChange(e.target.value)}
-            aria-label="Select year"
+            value={day}
+            onChange={e => onDayChange(e.target.value)}
+            aria-label="Select day"
           >
-            {years.map(y => <option key={y} value={y}>{y}</option>)}
+            {days.map(d => <option key={d} value={d}>{d}</option>)}
           </select>
           <select
             className="control-bar__select"
@@ -27,6 +27,21 @@ export default function ControlBar({ year, month, years, months, onYearChange, o
               <option key={m.value} value={m.value}>{m.label}</option>
             ))}
           </select>
+          <select
+            className="control-bar__select"
+            value={year}
+            onChange={e => onYearChange(e.target.value)}
+            aria-label="Select year"
+          >
+            {years.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <button
+            type="button"
+            className="control-bar__today-btn"
+            onClick={onToday}
+          >
+            Today
+          </button>
         </div>
       </div>
     </div>
@@ -36,12 +51,16 @@ export default function ControlBar({ year, month, years, months, onYearChange, o
 ControlBar.propTypes = {
   year:          PropTypes.string.isRequired,
   month:         PropTypes.string.isRequired,
+  day:           PropTypes.string.isRequired,
   years:         PropTypes.arrayOf(PropTypes.string).isRequired,
   months:        PropTypes.arrayOf(PropTypes.shape({
     value: PropTypes.string,
     label: PropTypes.string,
     year:  PropTypes.string,
   })).isRequired,
+  days:          PropTypes.arrayOf(PropTypes.string).isRequired,
   onYearChange:  PropTypes.func.isRequired,
   onMonthChange: PropTypes.func.isRequired,
+  onDayChange:   PropTypes.func.isRequired,
+  onToday:       PropTypes.func.isRequired,
 };

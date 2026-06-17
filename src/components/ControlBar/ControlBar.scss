@@ -70,4 +70,23 @@ $select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
       box-shadow: 0 0 0 2px rgba($color-primary, 0.15);
     }
   }
+
+  &__today-btn {
+    background: $color-primary;
+    border: 1px solid $color-primary;
+    border-radius: $border-radius-btn;
+    color: $color-white;
+    padding: 7px 13px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: $font-stack;
+    cursor: pointer;
+    white-space: nowrap;
+
+    &:hover  { opacity: 0.9; }
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba($color-primary, 0.15);
+    }
+  }
 }
