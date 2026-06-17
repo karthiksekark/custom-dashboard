@@ -65,8 +65,8 @@ CardHeader.propTypes = {
   lastFetchedAt: PropTypes.instanceOf(Date),
 };
 
-export default function ReleaseMgmt({ components, year, month, isCurrentPeriod, dashboardView, activeTab, isFiltered }) {
-  const { data, loading, error, usingMock, lastFetchedAt, refresh } = useJiraData({ year, month, components, dashboardView, activeTab, isFiltered });
+export default function ReleaseMgmt({ components, year, month, day, isCurrentPeriod, dashboardView, activeTab, isFiltered }) {
+  const { data, loading, error, usingMock, lastFetchedAt, refresh } = useJiraData({ year, month, day, components, dashboardView, activeTab, isFiltered });
 
   const { show: showToast } = useToast();
   const hasLoadedRef = useRef(false);
@@ -206,6 +206,7 @@ ReleaseMgmt.propTypes = {
   components:      PropTypes.string.isRequired,
   year:            PropTypes.string.isRequired,
   month:           PropTypes.string.isRequired,
+  day:             PropTypes.string,
   isCurrentPeriod: PropTypes.bool.isRequired,
   dashboardView:   PropTypes.string.isRequired,
   activeTab:       PropTypes.string.isRequired,

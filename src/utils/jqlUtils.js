@@ -53,6 +53,29 @@ export function todayIso() {
 }
 
 /**
+ * Returns zero-padded day-of-month strings ('01'..'NN') valid for the given year/month.
+ */
+export function daysInMonth(year, month) {
+  const count = moment.tz({ year: Number(year), month: Number(month) - 1, day: 1 }, APP_TIMEZONE).daysInMonth();
+  return Array.from({ length: count }, (_, i) => String(i + 1).padStart(2, '0'));
+}
+
+/**
+ * Returns a day-scoped { start, end } override for rangeJql(year, month), or null
+ * when no day is selected (caller should fall back to the full-month range).
+ * - day == today        -> month-to-date: { start: 1st of month, end: today }
+ * - day == any other day -> single day: { start: day, end: day }
+ */
+export function dayJql(year, month, day) {
+  if (!day) return null;
+  const { start } = rangeJql(year, month);
+  const iso = moment.tz({ year: Number(year), month: Number(month) - 1, day: Number(day) }, APP_TIMEZONE)
+    .format('YYYY-MM-DD');
+  if (iso === todayIso()) return { start, end: iso };
+  return { start: iso, end: iso };
+}
+
+/**
  * Returns today's display label in APP_TIMEZONE.
  */
 export function todayLabel() {

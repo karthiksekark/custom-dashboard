@@ -43,7 +43,7 @@ function createEmptyRMData() {
 }
 
 
-export function useJiraData({ year, month, components, dashboardView, activeTab, isFiltered }) {
+export function useJiraData({ year, month, day, components, dashboardView, activeTab, isFiltered }) {
   const [data,      setData]      = useState(createEmptyRMData);
   const [loading,   setLoading]   = useState(true);
   const [usingMock, setUsingMock] = useState(false);
@@ -53,7 +53,7 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
   const markFetchedRef       = useRef(null);
   const refreshIntervalMsRef = useRef(null);
 
-  const cacheKey = cache.makeKey(year, month, components);
+  const cacheKey = cache.makeKey(year, month, day, components);
 
   const load = useCallback(async (signal, { silent = false } = {}) => {
     if (!silent) setLoading(true);
@@ -90,8 +90,8 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
       }
 
       const settled = await Promise.allSettled([
-        api.fetchDefects(year, month, ctx),
-        api.fetchDailyMetrics(year, month, components, ctx),
+        api.fetchDefects(year, month, day, ctx),
+        api.fetchDailyMetrics(year, month, day, components, ctx),
         api.fetchRMHealthScore(components, ctx),
         api.fetchDefectsAlertTable(ctx),
         api.fetchRMQuarters(year, ctx),
@@ -151,12 +151,12 @@ export function useJiraData({ year, month, components, dashboardView, activeTab,
     } finally {
       setLoading(false);
     }
-  }, [year, month, components, dashboardView, activeTab, isFiltered, cacheKey]);
+  }, [year, month, day, components, dashboardView, activeTab, isFiltered, cacheKey]);
 
   const { lastFetchedAt, markFetched, refresh, refreshIntervalMs } = useBaseData({
     load,
     cacheKey,
-    deps: [year, month, components],
+    deps: [year, month, day, components],
   });
 
   // Keep refs in sync so load can use these without extra deps

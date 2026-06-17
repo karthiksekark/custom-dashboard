@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import moment from 'moment-timezone';
 import { AppProvider } from './context/AppContext';
 import { ToastProvider } from './context/ToastContext';
@@ -14,6 +14,7 @@ import SettingsPanel from './components/SettingsPanel/SettingsPanel';
 import OfflineBanner from './components/OfflineBanner/OfflineBanner';
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 import { useDateOptions } from './hooks/useDateOptions';
+import { daysInMonth } from './utils/jqlUtils';
 import { useStickyOffsets } from './hooks/useStickyOffsets';
 import { TEAM_MAP } from './config/teams.config';
 import './styles/main.scss';
@@ -23,7 +24,7 @@ const EST = 'America/New_York';
 
 function getDefaults() {
   const now = moment().tz(EST);
-  return { year: now.format('YYYY'), month: now.format('MM') };
+  return { year: now.format('YYYY'), month: now.format('MM'), day: now.format('DD') };
 }
 
 function Dashboard() {
@@ -41,8 +42,10 @@ function Dashboard() {
   const [tab,   setTab]   = useState('Release Management');
   const [year,  setYear]  = useState(defaults.year);
   const [month, setMonth] = useState(defaults.month);
+  const [day,   setDay]   = useState(defaults.day);
 
   const { months, years } = useDateOptions();
+  const days = useMemo(() => daysInMonth(year, month), [year, month]);
 
   const monthLabel      = months.find(m => m.value === month && m.year === year)?.label ?? month;
   const teamName        = TEAM_MAP[dashboardView]?.label ?? null;
@@ -60,9 +63,25 @@ function Dashboard() {
   function handleYearChange(newYear) {
     setYear(newYear);
     const available = months.filter(m => m.year === newYear);
-    if (!available.find(m => m.value === month)) {
-      setMonth(available[0]?.value ?? month);
-    }
+    const newMonth  = available.find(m => m.value === month) ? month : (available[0]?.value ?? month);
+    setMonth(newMonth);
+    clampDay(newYear, newMonth);
+  }
+
+  function handleMonthChange(newMonth) {
+    setMonth(newMonth);
+    clampDay(year, newMonth);
+  }
+
+  function clampDay(forYear, forMonth) {
+    const available = daysInMonth(forYear, forMonth);
+    if (!available.includes(day)) setDay(available[available.length - 1]);
+  }
+
+  function handleToday() {
+    setYear(defaults.year);
+    setMonth(defaults.month);
+    setDay(defaults.day);
   }
 
   // Don't render main UI until storage is loaded
@@ -84,10 +103,14 @@ function Dashboard() {
       <ControlBar
         year={year}
         month={month}
+        day={day}
         years={years}
         months={months}
+        days={days}
         onYearChange={handleYearChange}
-        onMonthChange={setMonth}
+        onMonthChange={handleMonthChange}
+        onDayChange={setDay}
+        onToday={handleToday}
       />
 
       {!isFiltered && <Tabs active={tab} onChange={setTab} />}
@@ -107,13 +130,13 @@ function Dashboard() {
       <>
         {activeTab === 'Release Management' && (
           <ErrorBoundary>
-            <ReleaseMgmt components={rmComponents} year={year} month={month} isCurrentPeriod={isCurrentPeriod} dashboardView={dashboardView} activeTab={activeTab} isFiltered={isFiltered} />
+            <ReleaseMgmt components={rmComponents} year={year} month={month} day={day} isCurrentPeriod={isCurrentPeriod} dashboardView={dashboardView} activeTab={activeTab} isFiltered={isFiltered} />
           </ErrorBoundary>
         )}
         {activeTab === 'FED' && (
           <ErrorBoundary>
             <TabPage
-              year={year} month={month} monthLabel={monthLabel}
+              year={year} month={month} day={day} monthLabel={monthLabel}
               components={fedComponents}
               isCurrentPeriod={isCurrentPeriod}
               dashboardView={dashboardView} activeTab={activeTab} isFiltered={isFiltered}
@@ -124,7 +147,7 @@ function Dashboard() {
         {activeTab === 'Catalog' && (
           <ErrorBoundary>
             <TabPage
-              year={year} month={month} monthLabel={monthLabel}
+              year={year} month={month} day={day} monthLabel={monthLabel}
               components={catComponents}
               isCurrentPeriod={isCurrentPeriod}
               dashboardView={dashboardView} activeTab={activeTab} isFiltered={isFiltered}

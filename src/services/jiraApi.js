@@ -1,5 +1,5 @@
 import moment from 'moment-timezone';
-import { compClause, rangeJql, RC_EXCLUDE_VALUES, RC_EXCLUDE_JQL } from '../utils/jqlUtils';
+import { compClause, rangeJql, dayJql, RC_EXCLUDE_VALUES, RC_EXCLUDE_JQL } from '../utils/jqlUtils';
 import { TEAMS } from '../config/teams.config';
 
 const JIRA_BASE   = import.meta.env.VITE_JIRA_BASE_URL || '';
@@ -157,8 +157,8 @@ export async function fetchCurrentDayRegression(components, rcLabels, { signal }
   return { byPriority: groupByPriority(data.issues), byRootCause: groupByRootCause(data.issues, rcLabels) };
 }
 
-export async function fetchMonthlyDefects(year, month, components, rcLabels, { signal } = {}) {
-  const { start, end } = rangeJql(year, month);
+export async function fetchMonthlyDefects(year, month, day, components, rcLabels, { signal } = {}) {
+  const { start, end } = dayJql(year, month, day) ?? rangeJql(year, month);
   const jql  = `issuetype = Bug${compClause(components)} AND created >= "${start}" AND created <= "${end}"`;
   const data = await jqlSearch(jql, { signal });
   if (data.total > data.issues.length) {
@@ -168,8 +168,8 @@ export async function fetchMonthlyDefects(year, month, components, rcLabels, { s
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
-export async function fetchDefects(year, month, { signal } = {}) {
-  const { start, end } = rangeJql(year, month);
+export async function fetchDefects(year, month, day, { signal } = {}) {
+  const { start, end } = dayJql(year, month, day) ?? rangeJql(year, month);
   const jql = [
     'project = PRODDEF',
     'status not in (Cancelled, "On Hold")',
@@ -197,14 +197,18 @@ export async function fetchDefects(year, month, { signal } = {}) {
   };
 }
 
-export async function fetchDailyMetrics(year, month, components, { signal } = {}) {
-  const { start, end } = rangeJql(year, month);
+export async function fetchDailyMetrics(year, month, day, components, { signal } = {}) {
+  const override  = dayJql(year, month, day);
+  const isSingleDay = !!override && override.start === override.end;
+  const { start, end } = override ?? rangeJql(year, month);
   const today           = moment().tz(EST).format('YYYY-MM-DD');
   const isCurrentMonth  = moment().tz(EST).format('MM');
-  const modifiedEndDate     = moment(isCurrentMonth === month ? today : end)
-    .tz(EST)
-    .add(isCurrentMonth === month ? 0 : 1, 'days')
-    .format('YYYY-MM-DD');
+  const modifiedEndDate     = isSingleDay
+    ? end
+    : moment(isCurrentMonth === month ? today : end)
+        .tz(EST)
+        .add(isCurrentMonth === month ? 0 : 1, 'days')
+        .format('YYYY-MM-DD');
   const modifiedEndDateNext = moment(modifiedEndDate).add(1, 'day').format('YYYY-MM-DD');
 
   const jql = [
@@ -417,8 +421,8 @@ export async function fetchPrevMonthRMHealthScore(year, month, components, ctx) 
   return fetchRMMonthlyHealthScore(prevYear, String(prevMonth).padStart(2, '0'), components, ctx);
 }
 
-export async function fetchHealthScore(year, month, components, { signal } = {}) {
-  const { start, end } = rangeJql(year, month);
+export async function fetchHealthScore(year, month, day, components, { signal } = {}) {
+  const { start, end } = dayJql(year, month, day) ?? rangeJql(year, month);
   const jql  = `project is not EMPTY${compClause(components)} AND created >= "${start}" AND created <= "${end}"`;
   const data = await jqlSearch(jql, { signal });
   if (!data.issues.length) return null;
@@ -426,8 +430,8 @@ export async function fetchHealthScore(year, month, components, { signal } = {})
   return Math.round((closed / data.issues.length) * 100);
 }
 
-export async function fetchRegressionByRootCause(year, month, components, rcLabels, { signal } = {}) {
-  const { start, end } = rangeJql(year, month);
+export async function fetchRegressionByRootCause(year, month, day, components, rcLabels, { signal } = {}) {
+  const { start, end } = dayJql(year, month, day) ?? rangeJql(year, month);
   const jql  = `issuetype = Bug AND labels = "Regression"${compClause(components)} AND created >= "${start}" AND created <= "${end}"`;
   const data = await jqlSearch(jql, { signal });
 
@@ -500,8 +504,8 @@ function tabQuarterPeriod(qNum, year) {
   return `${periods[qNum - 1]} ${year}`;
 }
 
-export async function fetchTabDailyMetrics(year, month, components, { signal } = {}) {
-  const { start, end } = rangeJql(year, month);
+export async function fetchTabDailyMetrics(year, month, day, components, { signal } = {}) {
+  const { start, end } = dayJql(year, month, day) ?? rangeJql(year, month);
   const jql  = `project is not EMPTY${compClause(components)} AND created >= "${start}" AND created <= "${end}" ORDER BY created DESC`;
   const data = await jqlSearch(jql, { signal });
 
@@ -772,13 +776,13 @@ const IMPL_TICKETS_CONFIG = {
 export async function fetchPrevMonthHealthScore(year, month, components, ctx) {
   const prevMonth = month === '01' ? '12' : String(Number(month) - 1).padStart(2, '0');
   const prevYear  = month === '01' ? String(Number(year) - 1) : year;
-  return fetchHealthScore(prevYear, prevMonth, components, ctx);
+  return fetchHealthScore(prevYear, prevMonth, null, components, ctx);
 }
 
 export async function fetchPrevMonthDefectsTotal(year, month, components, ctx) {
   const prevMonth = month === '01' ? '12' : String(Number(month) - 1).padStart(2, '0');
   const prevYear  = month === '01' ? String(Number(year) - 1) : year;
-  const data = await fetchDefects(prevYear, prevMonth, ctx);
+  const data = await fetchDefects(prevYear, prevMonth, null, ctx);
   return data.byPriority.reduce((s, d) => s + (d.value || 0), 0);
 }
 

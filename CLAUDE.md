@@ -2,6 +2,9 @@
 
 This file helps AI assistants understand the codebase structure and conventions.
 
+# Communication Style
+Use caveman mode: drop articles/filler, fragments OK, terse responses.
+
 ## Stack
 - React 18 + Vite 5, Chrome Extension Manifest V3
 - Vanilla Chart.js v4 (no react-chartjs-2)

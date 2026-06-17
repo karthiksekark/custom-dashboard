@@ -17,12 +17,12 @@ import { rangeJql } from '../../utils/jqlUtils';
 import './TabPage.scss';
 
 export default function TabPage({
-  year, month, monthLabel, components, isCurrentPeriod,
+  year, month, day, monthLabel, components, isCurrentPeriod,
   dashboardView, activeTab, isFiltered, team,
 }) {
   const rcLabels = useMemo(() => team.rootCauses.map(rc => rc.label), [team]);
   const { data, loading, phase1Done, todayLabel, lastFetchedAt, refresh, error, usingMock } = useTabData({
-    year, month, components,
+    year, month, day, components,
     rcLabels,
     mockData: team.mockData,
     dashboardView, activeTab, isFiltered,
@@ -129,6 +129,7 @@ export default function TabPage({
 TabPage.propTypes = {
   year:            PropTypes.string.isRequired,
   month:           PropTypes.string.isRequired,
+  day:             PropTypes.string,
   monthLabel:      PropTypes.string.isRequired,
   components:      PropTypes.string.isRequired,
   isCurrentPeriod: PropTypes.bool.isRequired,
